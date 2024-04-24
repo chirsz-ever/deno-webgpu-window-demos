@@ -48,7 +48,7 @@ context.configure({
 const canvasDomMock = {
     style: {},
     // TODO: implement or polyfill the event system
-    addEventListener(event) {
+    addEventListener(event: string) {
         console.info(`canvas.addEventListener("${event}", ...)`)
     },
     getRootNode() {
@@ -79,8 +79,8 @@ const contextMock = {
     }
 }
 
-let rafCallback;
-globalThis.requestAnimationFrame = (callback) => {
+let rafCallback: (() => void) | undefined;
+globalThis.requestAnimationFrame = (callback: () => void) => {
     // console.trace("window.requestAnimationFrame()");
     rafCallback = callback;
 }
@@ -91,9 +91,9 @@ let camera: THREE.camera, scene: THREE.Scene, renderer: WebGPURenderer;
 let portals: THREE.Group, rotate = true;
 let mixer: THREE.AnimationMixer, clock: THREE.Clock;
 
-await init();
+init();
 
-async function init(): Promise<void> {
+function init() {
 
     /*
     if (WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false) {
@@ -143,9 +143,10 @@ async function init(): Promise<void> {
             scene.add(object);
 
         },
-        (progress) => {
-            // console.info(`load gltf progress: ${progress.loaded}/${progress.total}`);
-        },
+        // (progress) => {
+        //     console.info(`load gltf progress: ${progress.loaded}/${progress.total}`);
+        // },
+        undefined,
         (err: Error) => {
             console.error("load gltf failed");
             throw err;
@@ -238,6 +239,8 @@ function animate() {
     surface.present();
 }
 
+const VALIDATION = Deno.args[0] == "--enable-validation";
+
 // TODO: Handle mouse and keyboard events, handle window resize event
 for await (const event of win.events()) {
     if (event.type === EventType.Quit) break;
@@ -257,11 +260,20 @@ for await (const event of win.events()) {
     }
     else if (event.type !== EventType.Draw) continue;
 
+    if (VALIDATION)
+        device.pushErrorScope("validation");
+
     if (rafCallback) {
         const callback = rafCallback;
         rafCallback = undefined;
         callback();
     }
+
+    if (VALIDATION)
+        device.popErrorScope().then((error) => {
+            console.error(`WebGPU validation error: ${error?.message}`);
+        });
+
     // FIXME: deno_sdl2 UI events would block network events?
     await new Promise((resolve) => setTimeout(resolve, 1));
 }
