@@ -1,0 +1,27 @@
+{
+  "version": "3",
+  "packages": {
+    "specifiers": {
+      "jsr:@divy/sdl2@0.10.5": "jsr:@divy/sdl2@0.10.5",
+      "npm:three@0.163.0": "npm:three@0.163.0"
+    },
+    "jsr": {
+      "@divy/sdl2@0.10.5": {
+        "integrity": "399d8ff45507d071301c9dde7740dbe35846cb5e9f6cd26ab53b251bb0039cd8"
+      }
+    },
+    "npm": {
+      "three@0.163.0": {
+        "integrity": "sha512-HlMgCb2TF/dTLRtknBnjUTsR8FsDqBY43itYop2+Zg822I+Kd0Ua2vs8CvfBVefXkBdNDrLMoRTGCIIpfCuDew==",
+        "dependencies": {}
+      }
+    }
+  },
+  "remote": {},
+  "workspace": {
+    "dependencies": [
+      "jsr:@divy/sdl2@0.10.5",
+      "npm:three@0.163.0"
+    ]
+  }
+}

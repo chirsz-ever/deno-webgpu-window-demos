@@ -1,0 +1,7 @@
+{
+    "imports": {
+        "three": "npm:three@0.163.0",
+        "deno_sdl2": "jsr:@divy/sdl2@0.10.5"
+    },
+    "vendor": true
+}
