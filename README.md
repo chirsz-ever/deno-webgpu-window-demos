@@ -12,5 +12,5 @@ then modify the `node_modules/three/examples/jsm/renderers/webgpu/WebGPUBackend.
 Then run the following command to run the "backdrop" demo:
 
 ```sh
-deno run --unstable-webgpu --unstable-ffi -A threejs/webgpu-backdrop.ts
+deno run -A threejs/webgpu-backdrop.ts
 ```

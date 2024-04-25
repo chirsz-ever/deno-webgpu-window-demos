@@ -271,7 +271,8 @@ for await (const event of win.events()) {
 
     if (VALIDATION)
         device.popErrorScope().then((error) => {
-            console.error(`WebGPU validation error: ${error?.message}`);
+            if (error)
+                console.error(`WebGPU validation error: ${error?.message}`);
         });
 
     // FIXME: deno_sdl2 UI events would block network events?
