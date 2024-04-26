@@ -249,3 +249,84 @@ export async function loadModel(loader: any,
     }
     loader.parse(model_data, dirname(remotePath), onLoad, onPorgress, onError)
 }
+
+// TypeScript definitions for WebGPU: https://github.com/gpuweb/types/blob/main/dist/index.d.ts
+
+type GPUImageCopyExternalImageSource =
+    | ImageBitmap
+    | ImageData
+    // | HTMLImageElement
+    // | HTMLVideoElement
+    // | VideoFrame
+    // | HTMLCanvasElement
+    // | OffscreenCanvas
+    ;
+
+type GPUIntegerCoordinate = number;
+
+interface GPUOrigin2DDict {
+    x?: GPUIntegerCoordinate;
+    y?: GPUIntegerCoordinate;
+}
+
+type GPUOrigin2D =
+    | Array<GPUIntegerCoordinate>
+    | GPUOrigin2DDict;
+
+interface GPUImageCopyExternalImage {
+    source: GPUImageCopyExternalImageSource;
+    origin?: GPUOrigin2D;
+    flipY?: boolean;
+}
+
+interface GPUImageCopyTextureTagged extends GPUImageCopyTexture {
+    colorSpace?: PredefinedColorSpace;
+    premultipliedAlpha?: boolean;
+}
+
+type GPUSize32 =
+    number;
+type GPUSize64 =
+    number;
+
+interface GPUImageDataLayout {
+    offset?: GPUSize64;
+    bytesPerRow?: GPUSize32;
+    rowsPerImage?: GPUSize32;
+}
+
+(GPUQueue.prototype as any).copyExternalImageToTexture = function (
+    source: GPUImageCopyExternalImage,
+    destination: GPUImageCopyTextureTagged,
+    _copySize: GPUExtent3D
+) {
+    if (!(source.source instanceof ImageBitmap)) {
+        throw new TypeError("not support call GPUQueue.copyExternalImageToTexture with that source");
+    }
+    const imgBmp = source.source;
+    let bmpData;
+    let width;
+    let height;
+    for (const s of Object.getOwnPropertySymbols(imgBmp)) {
+        switch (s.description) {
+            case "[[bitmapData]]":
+                bmpData = (imgBmp as any)[s];
+                break;
+            case "[[width]]":
+                width = (imgBmp as any)[s];
+                break;
+            case "[[height]]":
+                height = (imgBmp as any)[s];
+                break;
+            default:
+                break;
+        }
+    }
+
+    // suppose to RGBA8 format
+    (this as GPUQueue).writeTexture(destination, bmpData, {
+        offset: 0,
+        bytesPerRow: 4 * width,
+        rowsPerImage: height,
+    }, { width, height });
+}
