@@ -172,12 +172,12 @@ let button0 = 0;
 export async function runWindowEventLoop() {
     // TODO: Handle mouse and keyboard events, handle window resize event
     for await (const event of win.events()) {
-        if (event.type === EventType.Quit) break;
-        else if (event.type === EventType.KeyDown) {
+        if (event.type === EventType.Quit) {
+            break;
+        } else if (event.type === EventType.KeyDown) {
             if (getKeyName(event.keysym.sym) === "Escape") {
                 break;
             }
-            continue;
         } else if (event.type == EventType.MouseButtonDown) {
             const evt = new MouseEvent("pointerdown");
             setMouseEventXY(evt, event.x, event.y);
@@ -204,28 +204,29 @@ export async function runWindowEventLoop() {
         //             continue;
         //     }
         // }
-        else if (event.type !== EventType.Draw) continue;
+        else if (event.type === EventType.Draw) {
 
-        if (VALIDATION)
-            device.pushErrorScope("validation");
+            if (VALIDATION)
+                device.pushErrorScope("validation");
 
-        const currentCallbacks = requestAnimationFrameCallbacks;
-        requestAnimationFrameCallbacks = [];
-        while (currentCallbacks.length != 0) {
-            const callback = currentCallbacks.pop();
-            // FIXME: pass exact time
-            callback!(0);
-            surface.present();
+            const currentCallbacks = requestAnimationFrameCallbacks;
+            requestAnimationFrameCallbacks = [];
+            while (currentCallbacks.length != 0) {
+                const callback = currentCallbacks.pop();
+                // FIXME: pass exact time
+                callback!(0);
+                surface.present();
+            }
+
+            if (VALIDATION)
+                device.popErrorScope().then((error) => {
+                    if (error)
+                        console.error(`WebGPU validation error: ${error?.message}`);
+                });
+
+            // FIXME: deno_sdl2 UI events would block network events?
+            await new Promise((resolve) => setTimeout(resolve, 0));
         }
-
-        if (VALIDATION)
-            device.popErrorScope().then((error) => {
-                if (error)
-                    console.error(`WebGPU validation error: ${error?.message}`);
-            });
-
-        // FIXME: deno_sdl2 UI events would block network events?
-        await new Promise((resolve) => setTimeout(resolve, 0));
     }
 }
 
