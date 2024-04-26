@@ -1,7 +1,8 @@
 {
     "imports": {
         "three": "npm:three@0.164.0",
-        "deno_sdl2": "jsr:@divy/sdl2@0.10.5"
+        "deno_sdl2": "jsr:@divy/sdl2@0.10.5",
+        "std/": "https://deno.land/x/std@0.223.0/"
     },
     "unstable": [
         "webgpu",

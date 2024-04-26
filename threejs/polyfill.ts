@@ -1,4 +1,8 @@
 // deno-lint-ignore-file no-explicit-any
+
+import { join, dirname } from "std/path/mod.ts"
+import * as fs from "std/fs/mod.ts"
+
 import {
     EventType,
     WindowBuilder,
@@ -223,4 +227,24 @@ export async function runWindowEventLoop() {
         // FIXME: deno_sdl2 UI events would block network events?
         await new Promise((resolve) => setTimeout(resolve, 0));
     }
+}
+
+export async function loadModel(loader: any,
+    path: string,
+    onLoad: (gltf: unknown) => void,
+    onPorgress?: (_: any) => void,
+    onError?: (_: any) => void) {
+    const localPath = join(import.meta.dirname!, path);
+    const remotePath = "https://threejs.org/examples/" + path;
+    let model_data: ArrayBuffer;
+    if (await fs.exists(localPath)) {
+        model_data = (await Deno.readFile(localPath)).buffer;
+    } else {
+        const res = await fetch(remotePath);
+        model_data = await res.arrayBuffer();
+        Deno.mkdir(dirname(localPath), { recursive: true });
+        Deno.writeFile(localPath, new Uint8Array(model_data));
+        console.log(`${remotePath} is cached to ${localPath}`);
+    }
+    loader.parse(model_data, dirname(remotePath), onLoad, onPorgress, onError)
 }

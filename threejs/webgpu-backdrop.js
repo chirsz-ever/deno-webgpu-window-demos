@@ -60,25 +60,24 @@ function init() {
 
     // FIXME: Failed load textures, https://github.com/denoland/deno/issues/22649
     const loader = new GLTFLoader();
-    loader.load("https://threejs.org/examples/models/gltf/Michelle.glb",
-        (gltf) => {
-            console.log("load gltf success")
-            const object = gltf.scene;
-            mixer = new THREE.AnimationMixer(object);
+    polyfill.loadModel(loader, "models/gltf/Michelle.glb", gltf => {
+        console.log("load gltf success")
+        const object = gltf.scene;
+        mixer = new THREE.AnimationMixer(object);
 
-            const material = object.children[0].children[0].material;
+        const material = object.children[0].children[0].material;
 
-            // output material effect ( better using hsv )
-            // ignore output.sRGBToLinear().linearTosRGB() for now
+        // output material effect ( better using hsv )
+        // ignore output.sRGBToLinear().linearTosRGB() for now
 
-            material.outputNode = oscSine(timerLocal(.1)).mix(output, output.add(.1).posterize(4).mul(2));
+        material.outputNode = oscSine(timerLocal(.1)).mix(output, output.add(.1).posterize(4).mul(2));
 
-            const action = mixer.clipAction(gltf.animations[0]);
-            action.play();
+        const action = mixer.clipAction(gltf.animations[0]);
+        action.play();
 
-            scene.add(object);
+        scene.add(object);
 
-        });
+    });
 
     // portals
 

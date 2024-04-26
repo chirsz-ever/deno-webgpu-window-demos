@@ -52,7 +52,7 @@ function init() {
     // model
 
     const loader = new GLTFLoader();
-    loader.load("https://threejs.org/examples/models/gltf/Michelle.glb", function (gltf) {
+    polyfill.loadModel(loader, "models/gltf/Michelle.glb", function (gltf) {
 
         const object = gltf.scene;
         mixer = new THREE.AnimationMixer(object);
