@@ -130,6 +130,6 @@ export async function runWindowEventLoop() {
             });
 
         // FIXME: deno_sdl2 UI events would block network events?
-        await new Promise((resolve) => setTimeout(resolve, 1));
+        await new Promise((resolve) => setTimeout(resolve, 0));
     }
 }
