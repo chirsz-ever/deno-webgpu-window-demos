@@ -1,11 +1,10 @@
 {
     "imports": {
-        "three": "npm:three@0.163.0",
+        "three": "npm:three@0.164.0",
         "deno_sdl2": "jsr:@divy/sdl2@0.10.5"
     },
     "unstable": [
         "webgpu",
         "ffi"
-    ],
-    "vendor": true
+    ]
 }
