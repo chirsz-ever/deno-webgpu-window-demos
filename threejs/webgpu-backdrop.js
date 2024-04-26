@@ -14,9 +14,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import * as polyfill from './polyfill.ts';
 
-let camera: THREE.camera, scene: THREE.Scene, renderer: WebGPURenderer;
-let portals: THREE.Group, rotate = true;
-let mixer: THREE.AnimationMixer, clock: THREE.Clock;
+let camera, scene, renderer;
+let portals, rotate = true;
+let mixer, clock;
 
 let WIDTH = 800;
 let HEIGHT = 600;
@@ -61,7 +61,7 @@ function init() {
     // FIXME: Failed load textures, https://github.com/denoland/deno/issues/22649
     const loader = new GLTFLoader();
     loader.load("https://threejs.org/examples/models/gltf/Michelle.glb",
-        (gltf: THREE.GLTF) => {
+        (gltf) => {
             console.log("load gltf success")
             const object = gltf.scene;
             mixer = new THREE.AnimationMixer(object);
@@ -78,14 +78,6 @@ function init() {
 
             scene.add(object);
 
-        },
-        // (progress) => {
-        //     console.info(`load gltf progress: ${progress.loaded}/${progress.total}`);
-        // },
-        undefined,
-        (err: Error) => {
-            console.error("load gltf failed");
-            throw err;
         });
 
     // portals
@@ -95,7 +87,7 @@ function init() {
     portals = new THREE.Group();
     scene.add(portals);
 
-    function addBackdropSphere(backdropNode: THREE.ShaderNodeObject, backdropAlphaNode = null) {
+    function addBackdropSphere(backdropNode, backdropAlphaNode = null) {
 
         const distance = 1;
         const id = portals.children.length;
@@ -152,10 +144,8 @@ function init() {
 
 }
 
-function onWindowResize(w: number, h: number) {
+function onWindowResize() {
 
-    WIDTH = w;
-    HEIGHT = h;
     camera.aspect = WIDTH / HEIGHT;
     camera.updateProjectionMatrix();
 
