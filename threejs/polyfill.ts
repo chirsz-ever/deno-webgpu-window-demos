@@ -295,33 +295,23 @@ interface GPUImageDataLayout {
     rowsPerImage?: GPUSize32;
 }
 
+// FIXME: deno do not support copyExternalImageToTexture
+// https://github.com/denoland/deno/issues/23576
 (GPUQueue.prototype as any).copyExternalImageToTexture = function (
     source: GPUImageCopyExternalImage,
     destination: GPUImageCopyTextureTagged,
     _copySize: GPUExtent3D
 ) {
-    if (!(source.source instanceof ImageBitmap)) {
+    let imgBmp: ImageBitmap;
+    if (source.source instanceof ImageBitmap) {
+       imgBmp = source.source;
+    } else if (source.source instanceof Image) {
+        imgBmp = source.source._imageBitmap!;
+    } else {
         throw new TypeError("not support call GPUQueue.copyExternalImageToTexture with that source");
     }
-    const imgBmp = source.source;
-    let bmpData;
-    let width;
-    let height;
-    for (const s of Object.getOwnPropertySymbols(imgBmp)) {
-        switch (s.description) {
-            case "[[bitmapData]]":
-                bmpData = (imgBmp as any)[s];
-                break;
-            case "[[width]]":
-                width = (imgBmp as any)[s];
-                break;
-            case "[[height]]":
-                height = (imgBmp as any)[s];
-                break;
-            default:
-                break;
-        }
-    }
+
+    const { width, height, data: bmpData } = getImageBitmapInfo(imgBmp);
 
     // suppose to RGBA8 format
     (this as GPUQueue).writeTexture(destination, bmpData, {
@@ -329,4 +319,112 @@ interface GPUImageDataLayout {
         bytesPerRow: 4 * width,
         rowsPerImage: height,
     }, { width, height });
+};
+
+let s_width: symbol;
+let s_height: symbol;
+let s_data: symbol;
+
+// HACK: internal deno, because deno do not support decode image.
+function getImageBitmapInfo(bitmap: ImageBitmap) {
+    if (s_width === undefined || s_height === undefined || s_data === undefined) {
+        for (const s of Object.getOwnPropertySymbols(bitmap)) {
+            switch (s.description) {
+                case "[[bitmapData]]":
+                    s_data = s;
+                    break;
+                case "[[width]]":
+                    s_width = s;
+                    break;
+                case "[[height]]":
+                    s_height = s;
+                    break;
+            }
+        }
+    }
+    return {
+        width: (bitmap as any)[s_width],
+        height: (bitmap as any)[s_height],
+        data: (bitmap as any)[s_data],
+    }
 }
+
+const log_handler = {
+    get(obj: any, prop: any) {
+        if (prop in obj) {
+            return obj[prop];
+        } else {
+            console.log(`try to get .${String(prop)}`);
+        }
+    },
+    set(obj: any, prop: any, val: any) {
+        obj[prop] = val;
+        console.log(`try to set .${String(prop)} = ${val}`);
+        return true;
+    },
+};
+
+// deno do not support HTMLImageElement
+class Image extends EventTarget {
+    nodeType = 1;
+    width = 0;
+    height = 0;
+    _imageBitmap: ImageBitmap| undefined;
+
+    set src(uri: string) {
+        console.log(`loading ${uri}`);
+        const localPath = join(import.meta.dirname!, uri);
+        const remotePath = "https://threejs.org/examples/" + uri;
+        (async () => {
+            let data: ArrayBuffer;
+            if (await fs.exists(localPath)) {
+                data = (await Deno.readFile(localPath)).buffer;
+            } else {
+                const res = await fetch(remotePath);
+                data = await res.arrayBuffer();
+                Deno.mkdir(dirname(localPath), { recursive: true });
+                Deno.writeFile(localPath, new Uint8Array(data));
+                console.log(`${remotePath} is cached to ${localPath}`);
+            }
+            const bitmap = await createImageBitmap(new Blob([data], { type: "image/png" }));
+            const { width, height } = getImageBitmapInfo(bitmap);
+            this.width = width;
+            this.height = height;
+            this._imageBitmap = bitmap;
+            const event = new Event('load');
+            this.dispatchEvent(event);
+        })();
+    }
+
+    getRootNode() {
+        return this;
+    }
+
+    parentNode() {
+        return this;
+    }
+}
+
+// deno do not support document
+(globalThis as any).document = {
+    createElementNS(_namespaceURI: string, qualifiedName: string) {
+        if (qualifiedName !== "img") {
+            throw new Error(`Not support to create <${qualifiedName}>`);
+        }
+        // return new Proxy(new Image(), log_handler);
+        return new Image();
+    },
+
+    body: {
+        appendChild() { }
+    }
+}
+
+// FIXME: wgpu bug for not supporting integer literal bigger than 2**31 ?
+const createShaderModuleOrigin = GPUDevice.prototype.createShaderModule;
+GPUDevice.prototype.createShaderModule = function(descriptor: GPUShaderModuleDescriptor) {
+    if (descriptor.code.includes("3735928559")) {
+        descriptor.code = descriptor.code.replaceAll(/3735928559|4294967295/g, "$&u");
+    }
+    return createShaderModuleOrigin.call(this, descriptor);
+};
