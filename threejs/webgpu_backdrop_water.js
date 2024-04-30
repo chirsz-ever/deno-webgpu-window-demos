@@ -1,3 +1,4 @@
+// https://github.com/mrdoob/three.js/blob/81b782ad8b13eae6dbd3335cf295f7a00bba98ff/examples/webgpu_backdrop_water.html
 
 import * as THREE from 'three';
 import { color, depth, vec2, pass, depthTexture, normalWorld, triplanarTexture, texture, objectPosition, viewportTopLeft, viewportDepthTexture, viewportSharedTexture, mx_worley_noise_float, positionWorld, timerLocal, MeshStandardNodeMaterial, MeshBasicNodeMaterial } from 'three/nodes';
@@ -97,9 +98,7 @@ function init() {
     // objects
 
     const textureLoader = new THREE.TextureLoader();
-    // const iceDiffuse = textureLoader.load( './textures/water.jpg' );
-    // FIXME: deno can only load PNG file
-    const iceDiffuse = textureLoader.load( './textures/water.png' );
+    const iceDiffuse = textureLoader.load( './textures/water.jpg' );
     iceDiffuse.wrapS = THREE.RepeatWrapping;
     iceDiffuse.wrapT = THREE.RepeatWrapping;
     iceDiffuse.colorSpace = THREE.NoColorSpace;
