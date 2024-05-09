@@ -304,14 +304,16 @@ interface GPUImageDataLayout {
 ) {
     let imgBmp: ImageBitmap;
     if (source.source instanceof ImageBitmap) {
-       imgBmp = source.source;
+        imgBmp = source.source;
     } else if (source.source instanceof Image) {
         imgBmp = source.source._imageBitmap!;
     } else {
         throw new TypeError("not support call GPUQueue.copyExternalImageToTexture with that source");
     }
 
-    const { width, height, data: bmpData } = getImageBitmapInfo(imgBmp);
+    const bmpData = getImageBitmapData(imgBmp);
+    const width = imgBmp.width;
+    const height = imgBmp.height;
 
     // suppose to RGBA8 format
     (this as GPUQueue).writeTexture(destination, bmpData, {
@@ -321,32 +323,20 @@ interface GPUImageDataLayout {
     }, { width, height });
 };
 
-let s_width: symbol;
-let s_height: symbol;
 let s_data: symbol;
 
 // HACK: internal deno, because deno do not support decode image.
-function getImageBitmapInfo(bitmap: ImageBitmap) {
-    if (s_width === undefined || s_height === undefined || s_data === undefined) {
+function getImageBitmapData(bitmap: ImageBitmap) {
+    if (s_data === undefined) {
         for (const s of Object.getOwnPropertySymbols(bitmap)) {
             switch (s.description) {
                 case "[[bitmapData]]":
                     s_data = s;
                     break;
-                case "[[width]]":
-                    s_width = s;
-                    break;
-                case "[[height]]":
-                    s_height = s;
-                    break;
             }
         }
     }
-    return {
-        width: (bitmap as any)[s_width],
-        height: (bitmap as any)[s_height],
-        data: (bitmap as any)[s_data],
-    }
+    return (bitmap as any)[s_data]
 }
 
 const log_handler = {
@@ -369,7 +359,7 @@ class Image extends EventTarget {
     nodeType = 1;
     width = 0;
     height = 0;
-    _imageBitmap: ImageBitmap| undefined;
+    _imageBitmap: ImageBitmap | undefined;
 
     set src(uri: string) {
         console.log(`loading ${uri}`);
@@ -399,9 +389,8 @@ class Image extends EventTarget {
                 }
             }
             const bitmap = await createImageBitmap(new Blob([data], { type: "image/png" }));
-            const { width, height } = getImageBitmapInfo(bitmap);
-            this.width = width;
-            this.height = height;
+            this.width = bitmap.width;
+            this.height = bitmap.height;
             this._imageBitmap = bitmap;
             const event = new Event('load');
             this.dispatchEvent(event);
@@ -431,12 +420,3 @@ class Image extends EventTarget {
         appendChild() { }
     }
 }
-
-// FIXME: wgpu bug for not supporting integer literal bigger than 2**31 ?
-const createShaderModuleOrigin = GPUDevice.prototype.createShaderModule;
-GPUDevice.prototype.createShaderModule = function(descriptor: GPUShaderModuleDescriptor) {
-    if (descriptor.code.includes("3735928559")) {
-        descriptor.code = descriptor.code.replaceAll(/3735928559|4294967295/g, "$&u");
-    }
-    return createShaderModuleOrigin.call(this, descriptor);
-};
