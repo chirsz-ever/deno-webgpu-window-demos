@@ -65,12 +65,12 @@ class CanvasDomMock extends EventTarget {
 
     addEventListener(event: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions) {
         super.addEventListener(event, listener, options);
-        if (!ignoredEvents.includes(event))
-            console.info(`canvas.addEventListener("${event}", ...)`)
+        // if (!ignoredEvents.includes(event))
+        //     console.info(`canvas.addEventListener("${event}", ...)`)
     }
 
     getRootNode() {
-        console.info(`canvas.getRootNode()`);
+        // console.info(`canvas.getRootNode()`);
         return this;
     }
 
@@ -362,7 +362,7 @@ class Image extends EventTarget {
     _imageBitmap: ImageBitmap | undefined;
 
     set src(uri: string) {
-        console.log(`loading ${uri}`);
+        console.log(`polifill: loading ${uri}`);
         const cachePath = join(import.meta.dirname!, uri);
         let localPath;
         // FIXME: deno can only load PNG file
