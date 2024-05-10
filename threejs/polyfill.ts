@@ -363,14 +363,16 @@ class Image extends EventTarget {
 
     set src(uri: string) {
         console.log(`loading ${uri}`);
-        const cachePath = join(import.meta.dirname!, uri);
-        let localPath;
-        // FIXME: deno can only load PNG file
-        if (uri.endsWith(".jpg")) {
-            localPath = cachePath.slice(0, cachePath.length - 4) + ".png";
+        let mime_type;
+        if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) {
+            mime_type = "image/jpeg";
+        } else if (uri.endsWith(".png")) {
+            mime_type = "image/png";
         } else {
-            localPath = cachePath;
+            throw new Error("can not load " + uri);
         }
+        const cachePath = join(import.meta.dirname!, uri);
+        const localPath = cachePath;
         const remotePath = new URL(uri, "https://threejs.org/examples/");
         (async () => {
             let data: ArrayBuffer;
@@ -382,13 +384,8 @@ class Image extends EventTarget {
                 Deno.mkdir(dirname(cachePath), { recursive: true });
                 Deno.writeFile(cachePath, new Uint8Array(data));
                 console.log(`${remotePath} is cached to ${cachePath}`);
-                if (localPath !== cachePath) {
-                    // need imagemagick
-                    await new Deno.Command("convert", {args: [cachePath, localPath]}).spawn().status;
-                    data = (await Deno.readFile(localPath)).buffer;
-                }
             }
-            const bitmap = await createImageBitmap(new Blob([data], { type: "image/png" }));
+            const bitmap = await createImageBitmap(new Blob([data], { type: mime_type }));
             this.width = bitmap.width;
             this.height = bitmap.height;
             this._imageBitmap = bitmap;
