@@ -297,30 +297,25 @@ interface GPUImageDataLayout {
 
 // FIXME: deno do not support copyExternalImageToTexture
 // https://github.com/denoland/deno/issues/23576
+const copyExternalImageToTexture_origin = (GPUQueue.prototype as any).copyExternalImageToTexture;
 (GPUQueue.prototype as any).copyExternalImageToTexture = function (
     source: GPUImageCopyExternalImage,
     destination: GPUImageCopyTextureTagged,
-    _copySize: GPUExtent3D
+    copySize: GPUExtent3D
 ) {
-    let imgBmp: ImageBitmap;
-    if (source.source instanceof ImageBitmap) {
-        imgBmp = source.source;
-    } else if (source.source instanceof Image) {
-        imgBmp = source.source._imageBitmap!;
+    if (source.source instanceof ImageBitmap || source.source instanceof ImageData) {
+        copyExternalImageToTexture_origin.call(this, source, destination, copySize);
+    } else if ((source.source as any) instanceof Image) {
+        const imgBmp = (source.source as any)._imageBitmap!;
+        const imgData = new ImageData(new Uint8ClampedArray(getImageBitmapData(imgBmp)), imgBmp.height, imgBmp.width);
+        const newSource = {
+            ...source,
+            source: imgData,
+        };
+        copyExternalImageToTexture_origin.call(this, newSource, destination, copySize);
     } else {
         throw new TypeError("not support call GPUQueue.copyExternalImageToTexture with that source");
     }
-
-    const bmpData = getImageBitmapData(imgBmp);
-    const width = imgBmp.width;
-    const height = imgBmp.height;
-
-    // suppose to RGBA8 format
-    (this as GPUQueue).writeTexture(destination, bmpData, {
-        offset: 0,
-        bytesPerRow: 4 * width,
-        rowsPerImage: height,
-    }, { width, height });
 };
 
 let s_data: symbol;
