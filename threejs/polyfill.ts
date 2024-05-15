@@ -44,8 +44,25 @@ class MouseEvent extends Event {
     }
 }
 
+class WheelEvent extends MouseEvent {
+    deltaMode: number;
+    deltaX: number;
+    deltaY: number;
+    deltaZ: number = 0;
+    DOM_DELTA_PIXEL = 0x00;
+    DOM_DELTA_LINE = 0x01;
+    DOM_DELTA_PAGE = 0x02;
+
+    constructor(deltaX: number, deltaY: number) {
+        super("wheel");
+        this.deltaX = deltaX;
+        this.deltaY = deltaY;
+        this.deltaMode = this.DOM_DELTA_PIXEL;
+    }
+}
+
 const ignoredEvents = [
-    "pointerdown", "pointermove", "pointerup"
+    "pointerdown", "pointermove", "pointerup", "wheel"
 ];
 
 class CanvasDomMock extends EventTarget {
@@ -155,6 +172,10 @@ export async function runWindowEventLoop() {
             const evt = new MouseEvent("pointermove");
             setMouseEventXY(evt, event.x, event.y, true);
             evt.buttons = button0;
+            canvasDomMock.dispatchEvent(evt);
+        } else if (event.type == EventType.MouseWheel) {
+            const evt = new WheelEvent(event.x * 120, event.y * 120);
+            setMouseEventXY(evt, lastMoveMouseEvent!.x, lastMoveMouseEvent!.y);
             canvasDomMock.dispatchEvent(evt);
         }
         // else if (event.type === EventType.WindowEvent) {
