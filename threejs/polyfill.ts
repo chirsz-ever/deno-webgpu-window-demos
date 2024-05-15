@@ -10,11 +10,11 @@ import {
     Window,
 } from "deno_sdl2";
 
-type InitParams = {
-    title: string,
-    width: number,
-    height: number,
-};
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import WebGPUBackend from 'three/addons/renderers/webgpu/WebGPUBackend.js';
+
+const WIDTH = 800;
+const HEIGHT = 600;
 
 class MouseEvent extends Event {
     altKey: boolean = false;
@@ -76,7 +76,7 @@ class CanvasDomMock extends EventTarget {
 
     getContext(name: string) {
         console.info(`canvas.getContext("${name}")`);
-        return this.canvas.getContext(name as any);
+        return contextMock;
     }
 
     setPointerCapture() {
@@ -106,8 +106,9 @@ let win: Window;
 let device: GPUDevice;
 let surface: Deno.UnsafeWindowSurface;
 let canvasDomMock: CanvasDomMock;
+let contextMock: GPUCanvasContext;
 
-export async function init(params: InitParams) {
+export async function init(title: string) {
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) {
         throw new Error(`init WebGPU failed: adapter is ${adapter}`);
@@ -115,12 +116,12 @@ export async function init(params: InitParams) {
 
     device = await adapter.requestDevice();
 
-    const width = params.width;
-    const height = params.height;
+    const width = WIDTH;
+    const height = HEIGHT;
 
     const surfaceFormat = navigator.gpu.getPreferredCanvasFormat();
 
-    win = new WindowBuilder(params.title, width, height).build();
+    win = new WindowBuilder(title, width, height).build();
     surface = win.windowSurface();
     const context = surface.getContext("webgpu")
     context.configure({
@@ -132,7 +133,7 @@ export async function init(params: InitParams) {
 
     canvasDomMock = new CanvasDomMock(surface, width, height);
 
-    const contextMock = {
+    contextMock = {
         configure(configuration: GPUCanvasConfiguration) {
             configuration.width = width;
             configuration.height = height;
@@ -148,12 +149,6 @@ export async function init(params: InitParams) {
         unconfigure() {
             context.unconfigure();
         }
-    }
-
-    return {
-        device,
-        context: contextMock,
-        canvas: canvasDomMock,
     }
 }
 
@@ -401,14 +396,51 @@ class Image extends EventTarget {
 // deno do not support document
 (globalThis as any).document = {
     createElementNS(_namespaceURI: string, qualifiedName: string) {
-        if (qualifiedName !== "img") {
-            throw new Error(`Not support to create <${qualifiedName}>`);
+        if (qualifiedName === "img") {
+            // return new Proxy(new Image(), log_handler);
+            return new Image();
+        } else if (qualifiedName === "canvas") {
+            return canvasDomMock;
         }
-        // return new Proxy(new Image(), log_handler);
-        return new Image();
+
+        throw new Error(`Not support to create <${qualifiedName}>`);
     },
 
     body: {
         appendChild() { }
     }
+};
+
+if (!globalThis.window)
+    globalThis.window = {} as any;
+(window as any).innerWidth = WIDTH;
+(window as any).innerHeight = HEIGHT;
+// TODO: Retina Display?
+(window as any).devicePixelRatio = 1;
+// TODO: window.addEventListener
+
+GLTFLoader.prototype.load = function (path: string, onLoad: (gltf: any) => void) {
+    loadModel(this, path, onLoad)
+};
+
+const WebGPUBackend_init_origin = WebGPUBackend.prototype.init;
+WebGPUBackend.prototype.init = function init(renderer: any) {
+    this.parameters.device = device;
+    return WebGPUBackend_init_origin.call(this, renderer);
+}
+
+// TODO?: support lil-gui of three.js
+export class GUI {
+    add() {
+        return this;
+    }
+
+    onChange() {}
+
+    name() {}
+}
+
+// TODO?: support Stats of three.js
+export default class Stats {
+    update() {}
 }
