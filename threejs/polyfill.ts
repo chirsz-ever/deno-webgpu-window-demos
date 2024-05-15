@@ -75,8 +75,11 @@ class CanvasDomMock extends EventTarget {
     }
 
     getContext(name: string) {
-        console.info(`canvas.getContext("${name}")`);
-        return contextMock;
+        if (name !== "webgpu") {
+            throw new Error(`canvas.getContext("${name}") is not supported`)
+        }
+        const context = this.canvas.getContext(name);
+        return new GPUCanvasContextMock(context, this.width, this.height);
     }
 
     setPointerCapture() {
@@ -102,55 +105,18 @@ function setMouseEventXY(evt: MouseEvent, x: number, y: number, isMove = false) 
     }
 }
 
-let win: Window;
+// FIXME: https://github.com/denoland/deno/issues/23433
+// for this, we had to create the device before anything
 let device: GPUDevice;
+const WebGPUBackend_init_origin = WebGPUBackend.prototype.init;
+WebGPUBackend.prototype.init = function init(renderer: any) {
+    this.parameters.device = device;
+    return WebGPUBackend_init_origin.call(this, renderer);
+}
+
+let win: Window;
 let surface: Deno.UnsafeWindowSurface;
 let canvasDomMock: CanvasDomMock;
-let contextMock: GPUCanvasContext;
-
-export async function init(title: string) {
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) {
-        throw new Error(`init WebGPU failed: adapter is ${adapter}`);
-    }
-
-    device = await adapter.requestDevice();
-
-    const width = WIDTH;
-    const height = HEIGHT;
-
-    const surfaceFormat = navigator.gpu.getPreferredCanvasFormat();
-
-    win = new WindowBuilder(title, width, height).build();
-    surface = win.windowSurface();
-    const context = surface.getContext("webgpu")
-    context.configure({
-        device,
-        format: surfaceFormat,
-        width,
-        height,
-    })
-
-    canvasDomMock = new CanvasDomMock(surface, width, height);
-
-    contextMock = {
-        configure(configuration: GPUCanvasConfiguration) {
-            configuration.width = width;
-            configuration.height = height;
-            // FIXME: https://github.com/denoland/deno/issues/23509
-            if (configuration.alphaMode === "premultiplied") {
-                configuration.alphaMode = "opaque";
-            }
-            context.configure(configuration);
-        },
-        getCurrentTexture() {
-            return context.getCurrentTexture();
-        },
-        unconfigure() {
-            context.unconfigure();
-        }
-    }
-}
 
 type FrameRequestCallback = (time: number) => void;
 
@@ -225,13 +191,13 @@ export async function runWindowEventLoop() {
     }
 }
 
-export async function loadModel(loader: any,
-    path: string,
+GLTFLoader.prototype.load = async function (
+    uri: string,
     onLoad: (gltf: unknown) => void,
     onPorgress?: (_: any) => void,
     onError?: (_: any) => void) {
-    const localPath = join(import.meta.dirname!, path);
-    const remotePath = "https://threejs.org/examples/" + path;
+    const localPath = join(import.meta.dirname!, uri);
+    const remotePath = "https://threejs.org/examples/" + uri;
     let model_data: ArrayBuffer;
     if (await fs.exists(localPath)) {
         model_data = (await Deno.readFile(localPath)).buffer;
@@ -242,7 +208,150 @@ export async function loadModel(loader: any,
         Deno.writeFile(localPath, new Uint8Array(model_data));
         console.log(`${remotePath} is cached to ${localPath}`);
     }
-    loader.parse(model_data, dirname(remotePath), onLoad, onPorgress, onError)
+    this.parse(model_data, dirname(remotePath), onLoad, onPorgress, onError)
+}
+
+const log_handler = {
+    get(obj: any, prop: any) {
+        if (prop in obj) {
+            return obj[prop];
+        } else {
+            console.log(`try to get .${String(prop)}`);
+        }
+    },
+    set(obj: any, prop: any, val: any) {
+        obj[prop] = val;
+        console.log(`try to set .${String(prop)} = ${val}`);
+        return true;
+    },
+};
+
+// deno do not support HTMLImageElement
+class Image extends EventTarget {
+    nodeType = 1;
+    width = 0;
+    height = 0;
+    private _imageBitmap: ImageBitmap | undefined;
+
+    set src(uri: string) {
+        console.log(`loading ${uri}`);
+        let mime_type;
+        if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) {
+            mime_type = "image/jpeg";
+        } else if (uri.endsWith(".png")) {
+            mime_type = "image/png";
+        } else {
+            throw new Error("can not load " + uri);
+        }
+        const cachePath = join(import.meta.dirname!, uri);
+        const localPath = cachePath;
+        const remotePath = new URL(uri, "https://threejs.org/examples/");
+        (async () => {
+            let data: ArrayBuffer;
+            if (await fs.exists(localPath)) {
+                data = (await Deno.readFile(localPath)).buffer;
+            } else {
+                const res = await fetch(remotePath);
+                data = await res.arrayBuffer();
+                Deno.mkdir(dirname(cachePath), { recursive: true });
+                Deno.writeFile(cachePath, new Uint8Array(data));
+                console.log(`${remotePath} is cached to ${cachePath}`);
+            }
+            const bitmap = await createImageBitmap(new Blob([data], { type: mime_type }));
+            this.width = bitmap.width;
+            this.height = bitmap.height;
+            this._imageBitmap = bitmap;
+            const event = new Event('load');
+            this.dispatchEvent(event);
+        })();
+    }
+
+    getRootNode() {
+        return this;
+    }
+
+    parentNode() {
+        return this;
+    }
+}
+
+let canvasCount = 0;
+
+// deno do not support document
+(globalThis as any).document = {
+    createElementNS(_namespaceURI: string, qualifiedName: string) {
+        if (qualifiedName === "img") {
+            // return new Proxy(new Image(), log_handler);
+            return new Image();
+        } else if (qualifiedName === "canvas") {
+            canvasCount += 1;
+            if (canvasCount > 1) {
+                throw new Error("create too many <canvas>");
+            }
+            return canvasDomMock;
+        }
+
+        throw new Error(`Not support to create <${qualifiedName}>`);
+    },
+
+    body: {
+        appendChild() { }
+    }
+};
+
+// Deno 2.0 would not support window
+if (!globalThis.window)
+    globalThis.window = {} as any;
+(window as any).innerWidth = WIDTH;
+(window as any).innerHeight = HEIGHT;
+// TODO: Retina Display?
+(window as any).devicePixelRatio = 1;
+// TODO: window.addEventListener
+
+// ----- May be fixed/implemented in the future -----
+
+export async function init(title: string) {
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+        throw new Error(`init WebGPU failed: adapter is ${adapter}`);
+    }
+
+    device = await adapter.requestDevice();
+
+    const width = WIDTH;
+    const height = HEIGHT;
+
+    win = new WindowBuilder(title, width, height).build();
+    surface = win.windowSurface();
+
+    canvasDomMock = new CanvasDomMock(surface, width, height);
+}
+
+class GPUCanvasContextMock implements GPUCanvasContext {
+    constructor(
+        private context: GPUCanvasContext,
+        private width: number,
+        private height: number,
+    ) { }
+
+    configure(configuration: GPUCanvasConfiguration): undefined {
+        // FIXME: https://github.com/denoland/deno/issues/23508
+        configuration.width = this.width;
+        configuration.height = this.height;
+        // FIXME: https://github.com/denoland/deno/issues/23509
+        if (configuration.alphaMode === "premultiplied") {
+            configuration.alphaMode = "opaque";
+        }
+        this.context.configure(configuration);
+    }
+
+    getCurrentTexture() {
+        return this.context.getCurrentTexture();
+    }
+
+    unconfigure(): undefined {
+        this.context.unconfigure();
+    }
 }
 
 // TypeScript definitions for WebGPU: https://github.com/gpuweb/types/blob/main/dist/index.d.ts
@@ -329,118 +438,18 @@ function getImageBitmapData(bitmap: ImageBitmap) {
     return (bitmap as any)[s_data]
 }
 
-const log_handler = {
-    get(obj: any, prop: any) {
-        if (prop in obj) {
-            return obj[prop];
-        } else {
-            console.log(`try to get .${String(prop)}`);
-        }
-    },
-    set(obj: any, prop: any, val: any) {
-        obj[prop] = val;
-        console.log(`try to set .${String(prop)} = ${val}`);
-        return true;
-    },
-};
-
-// deno do not support HTMLImageElement
-class Image extends EventTarget {
-    nodeType = 1;
-    width = 0;
-    height = 0;
-    _imageBitmap: ImageBitmap | undefined;
-
-    set src(uri: string) {
-        console.log(`loading ${uri}`);
-        let mime_type;
-        if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) {
-            mime_type = "image/jpeg";
-        } else if (uri.endsWith(".png")) {
-            mime_type = "image/png";
-        } else {
-            throw new Error("can not load " + uri);
-        }
-        const cachePath = join(import.meta.dirname!, uri);
-        const localPath = cachePath;
-        const remotePath = new URL(uri, "https://threejs.org/examples/");
-        (async () => {
-            let data: ArrayBuffer;
-            if (await fs.exists(localPath)) {
-                data = (await Deno.readFile(localPath)).buffer;
-            } else {
-                const res = await fetch(remotePath);
-                data = await res.arrayBuffer();
-                Deno.mkdir(dirname(cachePath), { recursive: true });
-                Deno.writeFile(cachePath, new Uint8Array(data));
-                console.log(`${remotePath} is cached to ${cachePath}`);
-            }
-            const bitmap = await createImageBitmap(new Blob([data], { type: mime_type }));
-            this.width = bitmap.width;
-            this.height = bitmap.height;
-            this._imageBitmap = bitmap;
-            const event = new Event('load');
-            this.dispatchEvent(event);
-        })();
-    }
-
-    getRootNode() {
-        return this;
-    }
-
-    parentNode() {
-        return this;
-    }
-}
-
-// deno do not support document
-(globalThis as any).document = {
-    createElementNS(_namespaceURI: string, qualifiedName: string) {
-        if (qualifiedName === "img") {
-            // return new Proxy(new Image(), log_handler);
-            return new Image();
-        } else if (qualifiedName === "canvas") {
-            return canvasDomMock;
-        }
-
-        throw new Error(`Not support to create <${qualifiedName}>`);
-    },
-
-    body: {
-        appendChild() { }
-    }
-};
-
-if (!globalThis.window)
-    globalThis.window = {} as any;
-(window as any).innerWidth = WIDTH;
-(window as any).innerHeight = HEIGHT;
-// TODO: Retina Display?
-(window as any).devicePixelRatio = 1;
-// TODO: window.addEventListener
-
-GLTFLoader.prototype.load = function (path: string, onLoad: (gltf: any) => void) {
-    loadModel(this, path, onLoad)
-};
-
-const WebGPUBackend_init_origin = WebGPUBackend.prototype.init;
-WebGPUBackend.prototype.init = function init(renderer: any) {
-    this.parameters.device = device;
-    return WebGPUBackend_init_origin.call(this, renderer);
-}
-
 // TODO?: support lil-gui of three.js
 export class GUI {
     add() {
         return this;
     }
 
-    onChange() {}
+    onChange() { }
 
-    name() {}
+    name() { }
 }
 
 // TODO?: support Stats of three.js
 export default class Stats {
-    update() {}
+    update() { }
 }
