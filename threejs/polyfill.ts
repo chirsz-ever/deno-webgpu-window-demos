@@ -10,8 +10,10 @@ import {
     Window,
 } from "deno_sdl2";
 
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import WebGPUBackend from 'three/addons/renderers/webgpu/WebGPUBackend.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { FileLoader } from 'three';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -128,12 +130,15 @@ let device: GPUDevice;
 const WebGPUBackend_init_origin = WebGPUBackend.prototype.init;
 WebGPUBackend.prototype.init = function init(renderer: any) {
     this.parameters.device = device;
+    this.parameters.canvas = canvasDomMock;
+    this.parameters.context = contextMock;
     return WebGPUBackend_init_origin.call(this, renderer);
 }
 
 let win: Window;
 let surface: Deno.UnsafeWindowSurface;
 let canvasDomMock: CanvasDomMock;
+let contextMock: GPUCanvasContextMock;
 
 type FrameRequestCallback = (time: number) => void;
 
@@ -212,24 +217,41 @@ export async function runWindowEventLoop() {
     }
 }
 
-GLTFLoader.prototype.load = async function (
-    uri: string,
-    onLoad: (gltf: unknown) => void,
-    onPorgress?: (_: any) => void,
-    onError?: (_: any) => void) {
+const BASE_URL = "https://threejs.org/examples/";
+
+async function load_with_cache(uri: string) {
+    console.log(`loading ${uri}`);
     const localPath = join(import.meta.dirname!, uri);
-    const remotePath = "https://threejs.org/examples/" + uri;
-    let model_data: ArrayBuffer;
+    const remotePath = BASE_URL + uri;
+    let data: ArrayBuffer;
     if (await fs.exists(localPath)) {
-        model_data = (await Deno.readFile(localPath)).buffer;
+        data = (await Deno.readFile(localPath)).buffer;
     } else {
         const res = await fetch(remotePath);
-        model_data = await res.arrayBuffer();
+        data = await res.arrayBuffer();
         Deno.mkdir(dirname(localPath), { recursive: true });
-        Deno.writeFile(localPath, new Uint8Array(model_data));
+        Deno.writeFile(localPath, new Uint8Array(data));
         console.log(`${remotePath} is cached to ${localPath}`);
     }
-    this.parse(model_data, dirname(remotePath), onLoad, onPorgress, onError)
+    return data;
+}
+
+GLTFLoader.prototype.load = async function (uri: string, ...args: any[]) {
+    const model_data = await load_with_cache(uri);
+    this.parse(model_data, dirname(BASE_URL + uri), ...args);
+};
+
+const decoder = new TextDecoder();
+
+FontLoader.prototype.load = async function (uri: string, onLoad: any) {
+    const font_data = await load_with_cache(uri);
+    const font = this.parse(JSON.parse(decoder.decode(font_data)));
+    onLoad(font);
+};
+
+FileLoader.prototype.load = async function (uri: string, onLoad: any) {
+    const data = await load_with_cache(this.path + uri);
+    onLoad(data);
 }
 
 const log_handler = {
@@ -296,6 +318,10 @@ class Image extends EventTarget {
     }
 }
 
+class ElementMock extends EventTarget {
+    appendChild() { }
+}
+
 let canvasCount = 0;
 
 // deno do not support document
@@ -313,6 +339,16 @@ let canvasCount = 0;
         }
 
         throw new Error(`Not support to create <${qualifiedName}>`);
+    },
+
+    createElement(name: string) {
+        console.log(`document.createElement("${name}")`)
+        return new ElementMock();
+    },
+
+    getElementById(id: string) {
+        console.log(`document.getElementById("${id}")`)
+        return new ElementMock();
     },
 
     body: {
@@ -346,6 +382,11 @@ export async function init(title: string) {
     surface = win.windowSurface();
 
     canvasDomMock = new CanvasDomMock(surface, width, height);
+
+    // FIXME: three.js getContext would get error.
+    const context = surface.getContext("webgpu");
+
+    contextMock = new GPUCanvasContextMock(context, width, height);
 }
 
 class GPUCanvasContextMock implements GPUCanvasContext {
@@ -474,3 +515,12 @@ export class GUI {
 export default class Stats {
     update() { }
 }
+
+// FIXME: wgpu or three.js bug
+const GPUDevice_createShaderModule_origin = GPUDevice.prototype.createShaderModule;
+GPUDevice.prototype.createShaderModule = function (descriptor: GPUShaderModuleDescriptor) {
+    if (descriptor.code.includes("i32( 20.0 )")) {
+        descriptor.code = descriptor.code.replaceAll("i32( 20.0 )", "20");
+    }
+    return GPUDevice_createShaderModule_origin.call(this, descriptor);
+};

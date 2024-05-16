@@ -37,6 +37,10 @@ if ( m|<script type="module">| ) {
         print "import * as polyfill from \"./polyfill.ts\";\n";
         print "await polyfill.init(\"'"$TITLE"'\");\n\n";
     }
+    ($pre_indent)=/^\t\t\t(\s+)/;
+    if (s|new THREE\.CanvasTexture\( new FlakesTexture\(\) \);|textureLoader.load( "polyfill-textures/FlakesTexture.png" );|) {
+        print "$pre_indent/* POLYFILL */\n";
+    }
     s|^\t\t\t||;
     print;
 }')

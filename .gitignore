@@ -3,3 +3,4 @@ vendor/
 /.vscode
 /threejs/models
 /threejs/textures
+/threejs/fonts
