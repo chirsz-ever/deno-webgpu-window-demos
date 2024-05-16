@@ -432,7 +432,7 @@ const copyExternalImageToTexture_origin = (GPUQueue.prototype as any).copyExtern
         copyExternalImageToTexture_origin.call(this, source, destination, copySize);
     } else if ((source.source as any) instanceof Image) {
         const imgBmp = (source.source as any)._imageBitmap!;
-        const imgData = new ImageData(new Uint8ClampedArray(getImageBitmapData(imgBmp)), imgBmp.height, imgBmp.width);
+        const imgData = new ImageData(new Uint8ClampedArray(getImageBitmapData(imgBmp)), imgBmp.width, imgBmp.height);
         const newSource = {
             ...source,
             source: imgData,
