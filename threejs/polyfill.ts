@@ -509,11 +509,19 @@ export class GUI {
     onChange() { }
 
     name() { }
+
+    addFolder() {
+        return {
+            add() { }
+        }
+    }
 }
 
 // TODO?: support Stats of three.js
 export default class Stats {
     update() { }
+    begin() { }
+    end() { }
 }
 
 // FIXME: wgpu or three.js bug
