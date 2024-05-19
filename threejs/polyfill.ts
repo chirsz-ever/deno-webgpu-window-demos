@@ -387,6 +387,9 @@ export async function init(title: string) {
     const context = surface.getContext("webgpu");
 
     contextMock = new GPUCanvasContextMock(context, width, height);
+
+    // FIXME?: runWindowEventLoop must run after threejs codes.
+    setTimeout(runWindowEventLoop, 0);
 }
 
 class GPUCanvasContextMock implements GPUCanvasContext {

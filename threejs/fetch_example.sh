@@ -1,13 +1,24 @@
 #!/usr/bin/env bash
 
-if [[ $# == 0 ]]; then
-    echo "USAGE: $0 <URL>"
+if [[ $# == 0 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "USAGE:"
+    echo "  $0 <URL>"
+    echo "  $0 --refetch-all"
     exit
 fi
 
 set -e
-
 THIS_DIR=$(dirname "$(realpath "$0")")
+
+
+if [[ $1 == "--refetch-all" ]]; then
+    for f in "$THIS_DIR"/webgpu_*.js; do
+        URL=$(sed -nE '1s|^\s*//\s*(.*)\s*$|\1|p' "$f")
+        "$0" "$URL"
+    done
+    exit
+fi
+
 cd "$THIS_DIR"
 
 URL_ORIGIN=$1
@@ -28,8 +39,6 @@ if ( m|<script type="module">| ) {
     $p=true;
 } elsif($p) {
     if ( m|</script>| ) {
-        print "/* POLYFILL */\n";
-        print "polyfill.runWindowEventLoop()";
         exit;
     }
     if (/^\s*init\(\);/) {
@@ -50,3 +59,5 @@ if ( m|<script type="module">| ) {
 
 echo "// $URL_ORIGIN" > "$SCRIPT_FILE_NAME"
 echo "$SCRIPT_CONTENT" >> "$SCRIPT_FILE_NAME"
+
+echo "save to $SCRIPT_FILE_NAME"

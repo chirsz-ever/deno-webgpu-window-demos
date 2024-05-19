@@ -234,6 +234,3 @@ function render() {
 	renderer.render( scene, camera );
 
 }
-
-/* POLYFILL */
-polyfill.runWindowEventLoop()

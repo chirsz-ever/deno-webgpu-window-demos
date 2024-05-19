@@ -159,6 +159,3 @@ function animate() {
 	renderer.render( scene, camera );
 
 }
-
-/* POLYFILL */
-polyfill.runWindowEventLoop()

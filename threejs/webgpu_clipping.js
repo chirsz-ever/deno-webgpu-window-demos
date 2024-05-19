@@ -263,6 +263,3 @@ function animate( currentTime ) {
 	stats.end();
 
 }
-
-/* POLYFILL */
-polyfill.runWindowEventLoop()

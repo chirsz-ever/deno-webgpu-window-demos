@@ -265,6 +265,3 @@ function animate() {
 	postProcessing.render();
 
 }
-
-/* POLYFILL */
-polyfill.runWindowEventLoop()
