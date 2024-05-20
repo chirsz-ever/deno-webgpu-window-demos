@@ -509,6 +509,8 @@ export class GUI {
         return this;
     }
 
+    step() { }
+
     onChange() { }
 
     name() { }
