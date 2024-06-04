@@ -64,7 +64,7 @@ class WheelEvent extends MouseEvent {
     }
 }
 
-const ignoredEvents = [
+const _ignoredEvents = [
     "pointerdown", "pointermove", "pointerup", "wheel"
 ];
 
@@ -85,7 +85,7 @@ class CanvasDomMock extends EventTarget {
 
     addEventListener(event: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions) {
         super.addEventListener(event, listener, options);
-        // if (!ignoredEvents.includes(event))
+        // if (!_ignoredEvents.includes(event))
         //     console.info(`canvas.addEventListener("${event}", ...)`)
     }
 
@@ -255,7 +255,7 @@ FileLoader.prototype.load = async function (uri: string, onLoad: any) {
     onLoad(data);
 }
 
-const log_handler = {
+const _log_handler = {
     get(obj: any, prop: any) {
         if (prop in obj) {
             return obj[prop];
@@ -321,7 +321,7 @@ let canvasCount = 0;
 (globalThis as any).document = {
     createElementNS(_namespaceURI: string, qualifiedName: string) {
         if (qualifiedName === "img") {
-            // return new Proxy(new Image(), log_handler);
+            // return new Proxy(new Image(), _log_handler);
             return new Image();
         } else if (qualifiedName === "canvas") {
             canvasCount += 1;
