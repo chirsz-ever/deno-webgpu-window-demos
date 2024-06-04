@@ -2,6 +2,7 @@
 
 import { join, dirname } from "std/path/mod.ts"
 import * as fs from "std/fs/mod.ts"
+import { getPixels } from "https://deno.land/x/get_pixels@v1.2.2/mod.ts";
 
 import {
     EventType,
@@ -219,7 +220,7 @@ export async function runWindowEventLoop() {
 
 const BASE_URL = "https://threejs.org/examples/";
 
-async function load_with_cache(uri: string) {
+async function load_with_cache(uri: string): Promise<ArrayBuffer> {
     console.log(`loading ${uri}`);
     const localPath = join(import.meta.dirname!, uri);
     const remotePath = BASE_URL + uri;
@@ -274,18 +275,10 @@ class Image extends EventTarget {
     nodeType = 1;
     width = 0;
     height = 0;
-    private _imageBitmap: ImageBitmap | undefined;
+    _imageData: ImageData | undefined;
 
     set src(uri: string) {
         console.log(`loading ${uri}`);
-        let mime_type;
-        if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) {
-            mime_type = "image/jpeg";
-        } else if (uri.endsWith(".png")) {
-            mime_type = "image/png";
-        } else {
-            throw new Error("can not load " + uri);
-        }
         const cachePath = join(import.meta.dirname!, uri);
         const localPath = cachePath;
         const remotePath = new URL(uri, "https://threejs.org/examples/");
@@ -300,10 +293,10 @@ class Image extends EventTarget {
                 Deno.writeFile(cachePath, new Uint8Array(data));
                 console.log(`${remotePath} is cached to ${cachePath}`);
             }
-            const bitmap = await createImageBitmap(new Blob([data], { type: mime_type }));
-            this.width = bitmap.width;
-            this.height = bitmap.height;
-            this._imageBitmap = bitmap;
+            const imageData = await loadImageData(data);
+            this.width = imageData.width;
+            this.height = imageData.height;
+            this._imageData = imageData;
             const event = new Event('load');
             this.dispatchEvent(event);
         })();
@@ -466,25 +459,54 @@ interface GPUImageDataLayout {
 
 // FIXME: deno do not support copyExternalImageToTexture
 // https://github.com/denoland/deno/issues/23576
-const copyExternalImageToTexture_origin = (GPUQueue.prototype as any).copyExternalImageToTexture;
+// const copyExternalImageToTexture_origin = (GPUQueue.prototype as any).copyExternalImageToTexture;
+// (GPUQueue.prototype as any).copyExternalImageToTexture = function (
+//     source: GPUImageCopyExternalImage,
+//     destination: GPUImageCopyTextureTagged,
+//     copySize: GPUExtent3D
+// ) {
+//     if (source.source instanceof ImageBitmap || source.source instanceof ImageData) {
+//         copyExternalImageToTexture_origin.call(this, source, destination, copySize);
+//     } else if ((source.source as any) instanceof Image) {
+//         const imgBmp = (source.source as any)._imageBitmap!;
+//         const imgData = new ImageData(new Uint8ClampedArray(getImageBitmapData(imgBmp)), imgBmp.width, imgBmp.height);
+//         const newSource = {
+//             ...source,
+//             source: imgData,
+//         };
+//         copyExternalImageToTexture_origin.call(this, newSource, destination, copySize);
+//     } else {
+//         throw new TypeError("not support call GPUQueue.copyExternalImageToTexture with that source");
+//     }
+// };
+
 (GPUQueue.prototype as any).copyExternalImageToTexture = function (
     source: GPUImageCopyExternalImage,
     destination: GPUImageCopyTextureTagged,
-    copySize: GPUExtent3D
+    _copySize: GPUExtent3D
 ) {
-    if (source.source instanceof ImageBitmap || source.source instanceof ImageData) {
-        copyExternalImageToTexture_origin.call(this, source, destination, copySize);
+    let imgData: BufferSource;
+    let width: number;
+    let height: number;
+    if (source.source instanceof ImageBitmap) {
+        imgData = getImageBitmapData(source.source);
+        ({ height, width } = source.source);
+    } else if (source.source instanceof ImageData) {
+        imgData = source.source.data;
+        ({ height, width } = source.source);
     } else if ((source.source as any) instanceof Image) {
-        const imgBmp = (source.source as any)._imageBitmap!;
-        const imgData = new ImageData(new Uint8ClampedArray(getImageBitmapData(imgBmp)), imgBmp.width, imgBmp.height);
-        const newSource = {
-            ...source,
-            source: imgData,
-        };
-        copyExternalImageToTexture_origin.call(this, newSource, destination, copySize);
+        imgData = (source.source as any)._imageData.data;
+        ({ height, width } = source.source);
     } else {
         throw new TypeError("not support call GPUQueue.copyExternalImageToTexture with that source");
     }
+
+    // suppose to RGBA8 format
+    (this as GPUQueue).writeTexture(destination, imgData, {
+        offset: 0,
+        bytesPerRow: 4 * width,
+        rowsPerImage: height,
+    }, { width, height });
 };
 
 let s_data: symbol;
@@ -501,6 +523,30 @@ function getImageBitmapData(bitmap: ImageBitmap) {
         }
     }
     return (bitmap as any)[s_data]
+}
+
+// FIXME: hook createImageBitmap
+const createImageBitmap_origin = globalThis.createImageBitmap;
+(globalThis as any).createImageBitmap = async function (image: ImageBitmapSource, options?: ImageBitmapOptions | undefined) {
+    // console.log(`createImageBitmap: `, image, options)
+    if (options && options.colorSpaceConversion === "none")
+        options.colorSpaceConversion = "default"
+    if (options && options.premultiplyAlpha !== "default")
+        options.premultiplyAlpha = "default"
+    if (image instanceof ImageData) {
+        return createImageBitmap_origin(image, options);
+    } else if (image instanceof Blob) {
+        const imgData = await loadImageData(await image.arrayBuffer());
+        return createImageBitmap_origin(imgData, options);
+    } else {
+        throw new Error(`createImageBitmap: unsupported image ${image}`)
+    }
+};
+
+async function loadImageData(data: ArrayBuffer): Promise<ImageData> {
+    const { data: image_data, width, height } = await getPixels(data);
+    const imgData = new ImageData(new Uint8ClampedArray(image_data), width, height);
+    return imgData;
 }
 
 // FIXME: wgpu or three.js bug
