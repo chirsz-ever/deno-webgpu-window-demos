@@ -503,32 +503,6 @@ function getImageBitmapData(bitmap: ImageBitmap) {
     return (bitmap as any)[s_data]
 }
 
-// TODO?: support lil-gui of three.js
-export class GUI {
-    add() {
-        return this;
-    }
-
-    step() { }
-
-    onChange() { }
-
-    name() { }
-
-    addFolder() {
-        return {
-            add() { }
-        }
-    }
-}
-
-// TODO?: support Stats of three.js
-export default class Stats {
-    update() { }
-    begin() { }
-    end() { }
-}
-
 // FIXME: wgpu or three.js bug
 const GPUDevice_createShaderModule_origin = GPUDevice.prototype.createShaderModule;
 GPUDevice.prototype.createShaderModule = function (descriptor: GPUShaderModuleDescriptor) {
