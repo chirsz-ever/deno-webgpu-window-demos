@@ -2,7 +2,9 @@
     "imports": {
         "three": "npm:three@0.164.0",
         "deno_sdl2": "jsr:@divy/sdl2@0.10.5",
-        "std/": "https://deno.land/x/std@0.223.0/"
+        "std/": "https://deno.land/x/std@0.223.0/",
+        "three/addons/libs/lil-gui.module.min.js": "./threejs/polyfill/gui.ts",
+        "three/addons/libs/stats.module.js": "./threejs/polyfill/stats.ts"
     },
     "unstable": [
         "webgpu",

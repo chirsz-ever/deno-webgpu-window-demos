@@ -10,11 +10,13 @@ import {
     Window,
 } from "deno_sdl2";
 
-type InitParams = {
-    title: string,
-    width: number,
-    height: number,
-};
+import WebGPUBackend from 'three/addons/renderers/webgpu/WebGPUBackend.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { FileLoader } from 'three';
+
+const WIDTH = 800;
+const HEIGHT = 600;
 
 class MouseEvent extends Event {
     altKey: boolean = false;
@@ -44,8 +46,25 @@ class MouseEvent extends Event {
     }
 }
 
+class WheelEvent extends MouseEvent {
+    deltaMode: number;
+    deltaX: number;
+    deltaY: number;
+    deltaZ: number = 0;
+    DOM_DELTA_PIXEL = 0x00;
+    DOM_DELTA_LINE = 0x01;
+    DOM_DELTA_PAGE = 0x02;
+
+    constructor(deltaX: number, deltaY: number) {
+        super("wheel");
+        this.deltaX = deltaX;
+        this.deltaY = deltaY;
+        this.deltaMode = this.DOM_DELTA_PIXEL;
+    }
+}
+
 const ignoredEvents = [
-    "pointerdown", "pointermove", "pointerup"
+    "pointerdown", "pointermove", "pointerup", "wheel"
 ];
 
 class CanvasDomMock extends EventTarget {
@@ -75,8 +94,11 @@ class CanvasDomMock extends EventTarget {
     }
 
     getContext(name: string) {
-        console.info(`canvas.getContext("${name}")`);
-        return this.canvas.getContext(name as any);
+        if (name !== "webgpu") {
+            throw new Error(`canvas.getContext("${name}") is not supported`)
+        }
+        const context = this.canvas.getContext(name);
+        return new GPUCanvasContextMock(context, this.width, this.height);
     }
 
     setPointerCapture() {
@@ -102,60 +124,21 @@ function setMouseEventXY(evt: MouseEvent, x: number, y: number, isMove = false) 
     }
 }
 
-let win: Window;
+// FIXME: https://github.com/denoland/deno/issues/23433
+// for this, we had to create the device before anything
 let device: GPUDevice;
+const WebGPUBackend_init_origin = WebGPUBackend.prototype.init;
+WebGPUBackend.prototype.init = function init(renderer: any) {
+    this.parameters.device = device;
+    this.parameters.canvas = canvasDomMock;
+    this.parameters.context = contextMock;
+    return WebGPUBackend_init_origin.call(this, renderer);
+}
+
+let win: Window;
 let surface: Deno.UnsafeWindowSurface;
 let canvasDomMock: CanvasDomMock;
-
-export async function init(params: InitParams) {
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) {
-        throw new Error(`init WebGPU failed: adapter is ${adapter}`);
-    }
-
-    device = await adapter.requestDevice();
-
-    const width = params.width;
-    const height = params.height;
-
-    const surfaceFormat = navigator.gpu.getPreferredCanvasFormat();
-
-    win = new WindowBuilder(params.title, width, height).build();
-    surface = win.windowSurface();
-    const context = surface.getContext("webgpu")
-    context.configure({
-        device,
-        format: surfaceFormat,
-        width,
-        height,
-    })
-
-    canvasDomMock = new CanvasDomMock(surface, width, height);
-
-    const contextMock = {
-        configure(configuration: GPUCanvasConfiguration) {
-            configuration.width = width;
-            configuration.height = height;
-            // FIXME: https://github.com/denoland/deno/issues/23509
-            if (configuration.alphaMode === "premultiplied") {
-                configuration.alphaMode = "opaque";
-            }
-            context.configure(configuration);
-        },
-        getCurrentTexture() {
-            return context.getCurrentTexture();
-        },
-        unconfigure() {
-            context.unconfigure();
-        }
-    }
-
-    return {
-        device,
-        context: contextMock,
-        canvas: canvasDomMock,
-    }
-}
+let contextMock: GPUCanvasContextMock;
 
 type FrameRequestCallback = (time: number) => void;
 
@@ -195,6 +178,10 @@ export async function runWindowEventLoop() {
             setMouseEventXY(evt, event.x, event.y, true);
             evt.buttons = button0;
             canvasDomMock.dispatchEvent(evt);
+        } else if (event.type == EventType.MouseWheel) {
+            const evt = new WheelEvent(event.x * 120, event.y * 120);
+            setMouseEventXY(evt, lastMoveMouseEvent!.x, lastMoveMouseEvent!.y);
+            canvasDomMock.dispatchEvent(evt);
         }
         // else if (event.type === EventType.WindowEvent) {
         //     switch (event.event) {
@@ -230,24 +217,206 @@ export async function runWindowEventLoop() {
     }
 }
 
-export async function loadModel(loader: any,
-    path: string,
-    onLoad: (gltf: unknown) => void,
-    onPorgress?: (_: any) => void,
-    onError?: (_: any) => void) {
-    const localPath = join(import.meta.dirname!, path);
-    const remotePath = "https://threejs.org/examples/" + path;
-    let model_data: ArrayBuffer;
+const BASE_URL = "https://threejs.org/examples/";
+
+async function load_with_cache(uri: string) {
+    console.log(`loading ${uri}`);
+    const localPath = join(import.meta.dirname!, uri);
+    const remotePath = BASE_URL + uri;
+    let data: ArrayBuffer;
     if (await fs.exists(localPath)) {
-        model_data = (await Deno.readFile(localPath)).buffer;
+        data = (await Deno.readFile(localPath)).buffer;
     } else {
         const res = await fetch(remotePath);
-        model_data = await res.arrayBuffer();
+        data = await res.arrayBuffer();
         Deno.mkdir(dirname(localPath), { recursive: true });
-        Deno.writeFile(localPath, new Uint8Array(model_data));
+        Deno.writeFile(localPath, new Uint8Array(data));
         console.log(`${remotePath} is cached to ${localPath}`);
     }
-    loader.parse(model_data, dirname(remotePath), onLoad, onPorgress, onError)
+    return data;
+}
+
+GLTFLoader.prototype.load = async function (uri: string, ...args: any[]) {
+    const model_data = await load_with_cache(uri);
+    this.parse(model_data, dirname(BASE_URL + uri), ...args);
+};
+
+const decoder = new TextDecoder();
+
+FontLoader.prototype.load = async function (uri: string, onLoad: any) {
+    const font_data = await load_with_cache(uri);
+    const font = this.parse(JSON.parse(decoder.decode(font_data)));
+    onLoad(font);
+};
+
+FileLoader.prototype.load = async function (uri: string, onLoad: any) {
+    const data = await load_with_cache(this.path + uri);
+    onLoad(data);
+}
+
+const log_handler = {
+    get(obj: any, prop: any) {
+        if (prop in obj) {
+            return obj[prop];
+        } else {
+            console.log(`try to get .${String(prop)}`);
+        }
+    },
+    set(obj: any, prop: any, val: any) {
+        obj[prop] = val;
+        console.log(`try to set .${String(prop)} = ${val}`);
+        return true;
+    },
+};
+
+// deno do not support HTMLImageElement
+class Image extends EventTarget {
+    nodeType = 1;
+    width = 0;
+    height = 0;
+    private _imageBitmap: ImageBitmap | undefined;
+
+    set src(uri: string) {
+        console.log(`loading ${uri}`);
+        let mime_type;
+        if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) {
+            mime_type = "image/jpeg";
+        } else if (uri.endsWith(".png")) {
+            mime_type = "image/png";
+        } else {
+            throw new Error("can not load " + uri);
+        }
+        const cachePath = join(import.meta.dirname!, uri);
+        const localPath = cachePath;
+        const remotePath = new URL(uri, "https://threejs.org/examples/");
+        (async () => {
+            let data: ArrayBuffer;
+            if (await fs.exists(localPath)) {
+                data = (await Deno.readFile(localPath)).buffer;
+            } else {
+                const res = await fetch(remotePath);
+                data = await res.arrayBuffer();
+                Deno.mkdir(dirname(cachePath), { recursive: true });
+                Deno.writeFile(cachePath, new Uint8Array(data));
+                console.log(`${remotePath} is cached to ${cachePath}`);
+            }
+            const bitmap = await createImageBitmap(new Blob([data], { type: mime_type }));
+            this.width = bitmap.width;
+            this.height = bitmap.height;
+            this._imageBitmap = bitmap;
+            const event = new Event('load');
+            this.dispatchEvent(event);
+        })();
+    }
+
+    getRootNode() {
+        return this;
+    }
+
+    parentNode() {
+        return this;
+    }
+}
+
+class ElementMock extends EventTarget {
+    appendChild() { }
+}
+
+let canvasCount = 0;
+
+// deno do not support document
+(globalThis as any).document = {
+    createElementNS(_namespaceURI: string, qualifiedName: string) {
+        if (qualifiedName === "img") {
+            // return new Proxy(new Image(), log_handler);
+            return new Image();
+        } else if (qualifiedName === "canvas") {
+            canvasCount += 1;
+            if (canvasCount > 1) {
+                throw new Error("create too many <canvas>");
+            }
+            return canvasDomMock;
+        }
+
+        throw new Error(`Not support to create <${qualifiedName}>`);
+    },
+
+    createElement(name: string) {
+        console.log(`document.createElement("${name}")`)
+        return new ElementMock();
+    },
+
+    getElementById(id: string) {
+        console.log(`document.getElementById("${id}")`)
+        return new ElementMock();
+    },
+
+    body: {
+        appendChild() { }
+    }
+};
+
+// Deno 2.0 would not support window
+if (!globalThis.window)
+    globalThis.window = {} as any;
+(window as any).innerWidth = WIDTH;
+(window as any).innerHeight = HEIGHT;
+// TODO: Retina Display?
+(window as any).devicePixelRatio = 1;
+// TODO: window.addEventListener
+
+// ----- May be fixed/implemented in the future -----
+
+export async function init(title: string) {
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+        throw new Error(`init WebGPU failed: adapter is ${adapter}`);
+    }
+
+    device = await adapter.requestDevice();
+
+    const width = WIDTH;
+    const height = HEIGHT;
+
+    win = new WindowBuilder(title, width, height).build();
+    surface = win.windowSurface();
+
+    canvasDomMock = new CanvasDomMock(surface, width, height);
+
+    // FIXME: three.js getContext would get error.
+    const context = surface.getContext("webgpu");
+
+    contextMock = new GPUCanvasContextMock(context, width, height);
+
+    // FIXME?: runWindowEventLoop must run after threejs codes.
+    setTimeout(runWindowEventLoop, 0);
+}
+
+class GPUCanvasContextMock implements GPUCanvasContext {
+    constructor(
+        private context: GPUCanvasContext,
+        private width: number,
+        private height: number,
+    ) { }
+
+    configure(configuration: GPUCanvasConfiguration): undefined {
+        // FIXME: https://github.com/denoland/deno/issues/23508
+        configuration.width = this.width;
+        configuration.height = this.height;
+        // FIXME: https://github.com/denoland/deno/issues/23509
+        if (configuration.alphaMode === "premultiplied") {
+            configuration.alphaMode = "opaque";
+        }
+        this.context.configure(configuration);
+    }
+
+    getCurrentTexture() {
+        return this.context.getCurrentTexture();
+    }
+
+    unconfigure(): undefined {
+        this.context.unconfigure();
+    }
 }
 
 // TypeScript definitions for WebGPU: https://github.com/gpuweb/types/blob/main/dist/index.d.ts
@@ -297,30 +466,25 @@ interface GPUImageDataLayout {
 
 // FIXME: deno do not support copyExternalImageToTexture
 // https://github.com/denoland/deno/issues/23576
+const copyExternalImageToTexture_origin = (GPUQueue.prototype as any).copyExternalImageToTexture;
 (GPUQueue.prototype as any).copyExternalImageToTexture = function (
     source: GPUImageCopyExternalImage,
     destination: GPUImageCopyTextureTagged,
-    _copySize: GPUExtent3D
+    copySize: GPUExtent3D
 ) {
-    let imgBmp: ImageBitmap;
-    if (source.source instanceof ImageBitmap) {
-        imgBmp = source.source;
-    } else if (source.source instanceof Image) {
-        imgBmp = source.source._imageBitmap!;
+    if (source.source instanceof ImageBitmap || source.source instanceof ImageData) {
+        copyExternalImageToTexture_origin.call(this, source, destination, copySize);
+    } else if ((source.source as any) instanceof Image) {
+        const imgBmp = (source.source as any)._imageBitmap!;
+        const imgData = new ImageData(new Uint8ClampedArray(getImageBitmapData(imgBmp)), imgBmp.width, imgBmp.height);
+        const newSource = {
+            ...source,
+            source: imgData,
+        };
+        copyExternalImageToTexture_origin.call(this, newSource, destination, copySize);
     } else {
         throw new TypeError("not support call GPUQueue.copyExternalImageToTexture with that source");
     }
-
-    const bmpData = getImageBitmapData(imgBmp);
-    const width = imgBmp.width;
-    const height = imgBmp.height;
-
-    // suppose to RGBA8 format
-    (this as GPUQueue).writeTexture(destination, bmpData, {
-        offset: 0,
-        bytesPerRow: 4 * width,
-        rowsPerImage: height,
-    }, { width, height });
 };
 
 let s_data: symbol;
@@ -339,84 +503,11 @@ function getImageBitmapData(bitmap: ImageBitmap) {
     return (bitmap as any)[s_data]
 }
 
-const log_handler = {
-    get(obj: any, prop: any) {
-        if (prop in obj) {
-            return obj[prop];
-        } else {
-            console.log(`try to get .${String(prop)}`);
-        }
-    },
-    set(obj: any, prop: any, val: any) {
-        obj[prop] = val;
-        console.log(`try to set .${String(prop)} = ${val}`);
-        return true;
-    },
+// FIXME: wgpu or three.js bug
+const GPUDevice_createShaderModule_origin = GPUDevice.prototype.createShaderModule;
+GPUDevice.prototype.createShaderModule = function (descriptor: GPUShaderModuleDescriptor) {
+    if (descriptor.code.includes("i32( 20.0 )")) {
+        descriptor.code = descriptor.code.replaceAll("i32( 20.0 )", "20");
+    }
+    return GPUDevice_createShaderModule_origin.call(this, descriptor);
 };
-
-// deno do not support HTMLImageElement
-class Image extends EventTarget {
-    nodeType = 1;
-    width = 0;
-    height = 0;
-    _imageBitmap: ImageBitmap | undefined;
-
-    set src(uri: string) {
-        console.log(`polifill: loading ${uri}`);
-        const cachePath = join(import.meta.dirname!, uri);
-        let localPath;
-        // FIXME: deno can only load PNG file
-        if (uri.endsWith(".jpg")) {
-            localPath = cachePath.slice(0, cachePath.length - 4) + ".png";
-        } else {
-            localPath = cachePath;
-        }
-        const remotePath = new URL(uri, "https://threejs.org/examples/");
-        (async () => {
-            let data: ArrayBuffer;
-            if (await fs.exists(localPath)) {
-                data = (await Deno.readFile(localPath)).buffer;
-            } else {
-                const res = await fetch(remotePath);
-                data = await res.arrayBuffer();
-                Deno.mkdir(dirname(cachePath), { recursive: true });
-                Deno.writeFile(cachePath, new Uint8Array(data));
-                console.log(`${remotePath} is cached to ${cachePath}`);
-                if (localPath !== cachePath) {
-                    // need imagemagick
-                    await new Deno.Command("convert", {args: [cachePath, localPath]}).spawn().status;
-                    data = (await Deno.readFile(localPath)).buffer;
-                }
-            }
-            const bitmap = await createImageBitmap(new Blob([data], { type: "image/png" }));
-            this.width = bitmap.width;
-            this.height = bitmap.height;
-            this._imageBitmap = bitmap;
-            const event = new Event('load');
-            this.dispatchEvent(event);
-        })();
-    }
-
-    getRootNode() {
-        return this;
-    }
-
-    parentNode() {
-        return this;
-    }
-}
-
-// deno do not support document
-(globalThis as any).document = {
-    createElementNS(_namespaceURI: string, qualifiedName: string) {
-        if (qualifiedName !== "img") {
-            throw new Error(`Not support to create <${qualifiedName}>`);
-        }
-        // return new Proxy(new Image(), log_handler);
-        return new Image();
-    },
-
-    body: {
-        appendChild() { }
-    }
-}

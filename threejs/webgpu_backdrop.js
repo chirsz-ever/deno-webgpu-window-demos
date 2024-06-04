@@ -6,161 +6,144 @@ import { float, vec3, color, toneMapping, viewportSharedTexture, viewportTopLeft
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import WebGPU from 'three/addons/capabilities/WebGPU.js';
-// import WebGL from 'three/addons/capabilities/WebGL.js';
+import WebGL from 'three/addons/capabilities/WebGL.js';
 
 import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import * as polyfill from './polyfill.ts';
-
 let camera, scene, renderer;
 let portals, rotate = true;
 let mixer, clock;
 
-let WIDTH = 800;
-let HEIGHT = 600;
-
-const {
-    device,
-    context,
-    canvas,
-} = await polyfill.init({ width: WIDTH, height: HEIGHT, title: "Three.js demo - webgpu/backdrop" });
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Backdrop");
 
 init();
 
 function init() {
 
-    /*
-    if (WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false) {
-        document.body.appendChild(WebGPU.getErrorMessage());
-        throw new Error('No WebGPU or WebGL2 support');
-    }
-    */
+	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
 
-    if (WebGPU.isAvailable() === false) {
-        throw new Error('No WebGPU support');
-    }
+		document.body.appendChild( WebGPU.getErrorMessage() );
 
-    camera = new THREE.PerspectiveCamera(50, WIDTH / HEIGHT, 0.01, 100);
-    camera.position.set(1, 2, 3);
+		throw new Error( 'No WebGPU or WebGL2 support' );
 
-    scene = new THREE.Scene();
-    scene.backgroundNode = viewportTopLeft.y.mix(color(0x66bbff), color(0x4466ff));
-    camera.lookAt(0, 1, 0);
+	}
 
-    clock = new THREE.Clock();
+	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 100 );
+	camera.position.set( 1, 2, 3 );
 
-    //lights
+	scene = new THREE.Scene();
+	scene.backgroundNode = viewportTopLeft.y.mix( color( 0x66bbff ), color( 0x4466ff ) );
+	camera.lookAt( 0, 1, 0 );
 
-    const light = new THREE.SpotLight(0xffffff, 1);
-    light.power = 2000;
-    camera.add(light);
-    scene.add(camera);
+	clock = new THREE.Clock();
 
-    // FIXME: Failed load textures, https://github.com/denoland/deno/issues/22649
-    const loader = new GLTFLoader();
-    polyfill.loadModel(loader, "models/gltf/Michelle.glb", gltf => {
-        console.log("load gltf success")
-        const object = gltf.scene;
-        mixer = new THREE.AnimationMixer(object);
+	//lights
 
-        const material = object.children[0].children[0].material;
+	const light = new THREE.SpotLight( 0xffffff, 1 );
+	light.power = 2000;
+	camera.add( light );
+	scene.add( camera );
 
-        // output material effect ( better using hsv )
-        // ignore output.sRGBToLinear().linearTosRGB() for now
+	const loader = new GLTFLoader();
+	loader.load( 'models/gltf/Michelle.glb', function ( gltf ) {
 
-        material.outputNode = oscSine(timerLocal(.1)).mix(output, output.add(.1).posterize(4).mul(2));
+		const object = gltf.scene;
+		mixer = new THREE.AnimationMixer( object );
 
-        const action = mixer.clipAction(gltf.animations[0]);
-        action.play();
+		const material = object.children[ 0 ].children[ 0 ].material;
 
-        scene.add(object);
+		// output material effect ( better using hsv )
+		// ignore output.sRGBToLinear().linearTosRGB() for now
 
-    });
+		material.outputNode = oscSine( timerLocal( .1 ) ).mix( output, output.add( .1 ).posterize( 4 ).mul( 2 ) );
 
-    // portals
+		const action = mixer.clipAction( gltf.animations[ 0 ] );
+		action.play();
 
-    const geometry = new THREE.SphereGeometry(.3, 32, 16);
+		scene.add( object );
 
-    portals = new THREE.Group();
-    scene.add(portals);
+	} );
 
-    function addBackdropSphere(backdropNode, backdropAlphaNode = null) {
+	// portals
 
-        const distance = 1;
-        const id = portals.children.length;
-        const rotation = THREE.MathUtils.degToRad(id * 45);
+	const geometry = new THREE.SphereGeometry( .3, 32, 16 );
 
-        const material = new MeshStandardNodeMaterial({ color: 0x0066ff });
-        material.roughnessNode = float(.2);
-        material.metalnessNode = float(0);
-        material.backdropNode = backdropNode;
-        material.backdropAlphaNode = backdropAlphaNode;
-        material.transparent = true;
+	portals = new THREE.Group();
+	scene.add( portals );
 
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(
-            Math.cos(rotation) * distance,
-            1,
-            Math.sin(rotation) * distance
-        );
+	function addBackdropSphere( backdropNode, backdropAlphaNode = null ) {
 
-        portals.add(mesh);
+		const distance = 1;
+		const id = portals.children.length;
+		const rotation = THREE.MathUtils.degToRad( id * 45 );
 
-    }
+		const material = new MeshStandardNodeMaterial( { color: 0x0066ff } );
+		material.roughnessNode = float( .2 );
+		material.metalnessNode = float( 0 );
+		material.backdropNode = backdropNode;
+		material.backdropAlphaNode = backdropAlphaNode;
+		material.transparent = true;
 
-    addBackdropSphere(viewportSharedTexture().bgr.hue(oscSine().mul(Math.PI)));
-    addBackdropSphere(viewportSharedTexture().rgb.oneMinus());
-    addBackdropSphere(viewportSharedTexture().rgb.saturation(0));
-    addBackdropSphere(viewportSharedTexture().rgb.saturation(10), oscSine());
-    addBackdropSphere(viewportSharedTexture().rgb.overlay(checker(uv().mul(10))));
-    addBackdropSphere(viewportSharedTexture(viewportTopLeft.mul(40).floor().div(40)));
-    addBackdropSphere(viewportSharedTexture(viewportTopLeft.mul(80).floor().div(80)).add(color(0x0033ff)));
-    addBackdropSphere(vec3(0, 0, viewportSharedTexture().b));
+		const mesh = new THREE.Mesh( geometry, material );
+		mesh.position.set(
+			Math.cos( rotation ) * distance,
+			1,
+			Math.sin( rotation ) * distance
+		);
 
-    //renderer
+		portals.add( mesh );
 
-    renderer = new WebGPURenderer({
-        antialias: true,
-        device,
-        canvas,
-        context,
-    });
-    // renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(WIDTH, HEIGHT, false);
-    renderer.setAnimationLoop(animate);
-    renderer.toneMappingNode = toneMapping(THREE.LinearToneMapping, .3);
-    // document.body.appendChild(renderer.domElement);
+	}
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 1, 0);
-    controls.addEventListener('start', () => rotate = false);
-    controls.addEventListener('end', () => rotate = true);
-    controls.update();
+	addBackdropSphere( viewportSharedTexture().bgr.hue( oscSine().mul( Math.PI ) ) );
+	addBackdropSphere( viewportSharedTexture().rgb.oneMinus() );
+	addBackdropSphere( viewportSharedTexture().rgb.saturation( 0 ) );
+	addBackdropSphere( viewportSharedTexture().rgb.saturation( 10 ), oscSine() );
+	addBackdropSphere( viewportSharedTexture().rgb.overlay( checker( uv().mul( 10 ) ) ) );
+	addBackdropSphere( viewportSharedTexture( viewportTopLeft.mul( 40 ).floor().div( 40 ) ) );
+	addBackdropSphere( viewportSharedTexture( viewportTopLeft.mul( 80 ).floor().div( 80 ) ).add( color( 0x0033ff ) ) );
+	addBackdropSphere( vec3( 0, 0, viewportSharedTexture().b ) );
 
-    // window.addEventListener('resize', onWindowResize);
+	//renderer
+
+	renderer = new WebGPURenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.setAnimationLoop( animate );
+	renderer.toneMappingNode = toneMapping( THREE.LinearToneMapping, .3 );
+	document.body.appendChild( renderer.domElement );
+
+	const controls = new OrbitControls( camera, renderer.domElement );
+	controls.target.set( 0, 1, 0 );
+	controls.addEventListener( 'start', () => rotate = false );
+	controls.addEventListener( 'end', () => rotate = true );
+	controls.update();
+
+	window.addEventListener( 'resize', onWindowResize );
 
 }
 
 function onWindowResize() {
 
-    camera.aspect = WIDTH / HEIGHT;
-    camera.updateProjectionMatrix();
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
 
-    renderer.setSize(WIDTH, HEIGHT);
+	renderer.setSize( window.innerWidth, window.innerHeight );
 
 }
 
 function animate() {
 
-    const delta = clock.getDelta();
+	const delta = clock.getDelta();
 
-    if (mixer) mixer.update(delta);
+	if ( mixer ) mixer.update( delta );
 
-    if (rotate) portals.rotation.y += delta * 0.5;
+	if ( rotate ) portals.rotation.y += delta * 0.5;
 
-    renderer.render(scene, camera);
+	renderer.render( scene, camera );
+
 }
-
-polyfill.runWindowEventLoop();

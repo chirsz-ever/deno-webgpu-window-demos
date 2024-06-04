@@ -3,175 +3,159 @@
 import * as THREE from 'three';
 import { color, depth, depthTexture, toneMapping, viewportSharedTexture, viewportMipTexture, viewportTopLeft, checker, uv, modelScale, MeshBasicNodeMaterial } from 'three/nodes';
 
-// import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import WebGPU from 'three/addons/capabilities/WebGPU.js';
-// import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import * as polyfill from './polyfill.ts';
+import WebGL from 'three/addons/capabilities/WebGL.js';
 
 import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-let WIDTH = 800;
-let HEIGHT = 600;
-
 let camera, scene, renderer;
 let mixer, clock;
 
-const {
-    device,
-    context,
-    canvas,
-} = await polyfill.init({ width: WIDTH, height: HEIGHT, title: "Three.js demo - webgpu/backdrop-area" });
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Backdrop Area");
 
 init();
 
 function init() {
 
-    if (WebGPU.isAvailable() === false /*&& WebGL.isWebGL2Available() === false*/) {
+	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
 
-        // document.body.appendChild(WebGPU.getErrorMessage());
+		document.body.appendChild( WebGPU.getErrorMessage() );
 
-        throw new Error('No WebGPU or WebGL2 support');
+		throw new Error( 'No WebGPU or WebGL2 support' );
 
-    }
+	}
 
-    camera = new THREE.PerspectiveCamera(50, WIDTH / HEIGHT, 0.25, 25);
-    camera.position.set(3, 2, 3);
+	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.25, 25 );
+	camera.position.set( 3, 2, 3 );
 
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x777777);
-    camera.lookAt(0, 1, 0);
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x777777 );
+	camera.lookAt( 0, 1, 0 );
 
-    clock = new THREE.Clock();
+	clock = new THREE.Clock();
 
-    // model
+	// model
 
-    const loader = new GLTFLoader();
-    polyfill.loadModel(loader, "models/gltf/Michelle.glb", function (gltf) {
+	const loader = new GLTFLoader();
+	loader.load( 'models/gltf/Michelle.glb', function ( gltf ) {
 
-        const object = gltf.scene;
-        mixer = new THREE.AnimationMixer(object);
+		const object = gltf.scene;
+		mixer = new THREE.AnimationMixer( object );
 
-        const action = mixer.clipAction(gltf.animations[0]);
-        action.play();
+		const action = mixer.clipAction( gltf.animations[ 0 ] );
+		action.play();
 
-        scene.add(object);
+		scene.add( object );
 
-    });
+	} );
 
-    // volume
+	// volume
 
-    const depthDistance = depthTexture().distance(depth);
-    const depthAlphaNode = depthDistance.oneMinus().smoothstep(.90, 2).mul(20).saturate();
-    const depthBlurred = viewportMipTexture().bicubic(depthDistance.smoothstep(0, .6).mul(40 * 5).clamp(0, 5));
+	const depthDistance = depthTexture().distance( depth );
+	const depthAlphaNode = depthDistance.oneMinus().smoothstep( .90, 2 ).mul( 20 ).saturate();
+	const depthBlurred = viewportMipTexture().bicubic( depthDistance.smoothstep( 0, .6 ).mul( 40 * 5 ).clamp( 0, 5 ) );
 
-    const blurredBlur = new MeshBasicNodeMaterial();
-    blurredBlur.backdropNode = depthBlurred.add(depthAlphaNode.mix(color(0x0066ff), 0));
-    blurredBlur.transparent = true;
-    blurredBlur.side = THREE.DoubleSide;
+	const blurredBlur = new MeshBasicNodeMaterial();
+	blurredBlur.backdropNode = depthBlurred.add( depthAlphaNode.mix( color( 0x0066ff ), 0 ) );
+	blurredBlur.transparent = true;
+	blurredBlur.side = THREE.DoubleSide;
 
-    const volumeMaterial = new MeshBasicNodeMaterial();
-    volumeMaterial.colorNode = color(0x0066ff);
-    volumeMaterial.backdropNode = viewportSharedTexture();
-    volumeMaterial.backdropAlphaNode = depthAlphaNode;
-    volumeMaterial.transparent = true;
-    volumeMaterial.side = THREE.DoubleSide;
+	const volumeMaterial = new MeshBasicNodeMaterial();
+	volumeMaterial.colorNode = color( 0x0066ff );
+	volumeMaterial.backdropNode = viewportSharedTexture();
+	volumeMaterial.backdropAlphaNode = depthAlphaNode;
+	volumeMaterial.transparent = true;
+	volumeMaterial.side = THREE.DoubleSide;
 
-    const depthMaterial = new MeshBasicNodeMaterial();
-    depthMaterial.backdropNode = depthAlphaNode;
-    depthMaterial.transparent = true;
-    depthMaterial.side = THREE.DoubleSide;
+	const depthMaterial = new MeshBasicNodeMaterial();
+	depthMaterial.backdropNode = depthAlphaNode;
+	depthMaterial.transparent = true;
+	depthMaterial.side = THREE.DoubleSide;
 
-    const bicubicMaterial = new MeshBasicNodeMaterial();
-    bicubicMaterial.backdropNode = viewportMipTexture().bicubic(5); // @TODO: Move to alpha value [ 0, 1 ]
-    bicubicMaterial.backdropAlphaNode = checker(uv().mul(3).mul(modelScale.xy));
-    bicubicMaterial.opacityNode = bicubicMaterial.backdropAlphaNode;
-    bicubicMaterial.transparent = true;
-    bicubicMaterial.side = THREE.DoubleSide;
+	const bicubicMaterial = new MeshBasicNodeMaterial();
+	bicubicMaterial.backdropNode = viewportMipTexture().bicubic( 5 ); // @TODO: Move to alpha value [ 0, 1 ]
+	bicubicMaterial.backdropAlphaNode = checker( uv().mul( 3 ).mul( modelScale.xy ) );
+	bicubicMaterial.opacityNode = bicubicMaterial.backdropAlphaNode;
+	bicubicMaterial.transparent = true;
+	bicubicMaterial.side = THREE.DoubleSide;
 
-    const pixelMaterial = new MeshBasicNodeMaterial();
-    pixelMaterial.backdropNode = viewportSharedTexture(viewportTopLeft.mul(100).floor().div(100));
-    pixelMaterial.transparent = true;
+	const pixelMaterial = new MeshBasicNodeMaterial();
+	pixelMaterial.backdropNode = viewportSharedTexture( viewportTopLeft.mul( 100 ).floor().div( 100 ) );
+	pixelMaterial.transparent = true;
 
-    // box / floor
+	// box / floor
 
-    const box = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), volumeMaterial);
-    box.position.set(0, 1, 0);
-    scene.add(box);
+	const box = new THREE.Mesh( new THREE.BoxGeometry( 2, 2, 2 ), volumeMaterial );
+	box.position.set( 0, 1, 0 );
+	scene.add( box );
 
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(1.99, .01, 1.99), new MeshBasicNodeMaterial({ color: 0x333333 }));
-    floor.position.set(0, 0, 0);
-    scene.add(floor);
+	const floor = new THREE.Mesh( new THREE.BoxGeometry( 1.99, .01, 1.99 ), new MeshBasicNodeMaterial( { color: 0x333333 } ) );
+	floor.position.set( 0, 0, 0 );
+	scene.add( floor );
 
-    // renderer
+	// renderer
 
-    renderer = new WebGPURenderer({
-        device,
-        context,
-        canvas,
-    });
-    // renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(WIDTH, HEIGHT);
-    renderer.setAnimationLoop(animate);
-    renderer.toneMappingNode = toneMapping(THREE.LinearToneMapping, .2);
-    // document.body.appendChild(renderer.domElement);
+	renderer = new WebGPURenderer( /*{ antialias: true }*/ );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.setAnimationLoop( animate );
+	renderer.toneMappingNode = toneMapping( THREE.LinearToneMapping, .2 );
+	document.body.appendChild( renderer.domElement );
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 1, 0);
-    controls.update();
+	const controls = new OrbitControls( camera, renderer.domElement );
+	controls.target.set( 0, 1, 0 );
+	controls.update();
 
-    // window.addEventListener('resize', onWindowResize);
+	window.addEventListener( 'resize', onWindowResize );
 
-    // gui
-    /*
+	// gui
 
-    const materials = {
-        'blurred': blurredBlur,
-        'volume': volumeMaterial,
-        'depth': depthMaterial,
-        'bicubic': bicubicMaterial,
-        'pixel': pixelMaterial
-    };
+	const materials = {
+		'blurred': blurredBlur,
+		'volume': volumeMaterial,
+		'depth': depthMaterial,
+		'bicubic': bicubicMaterial,
+		'pixel': pixelMaterial
+	};
 
-    const gui = new GUI();
-    const options = { material: 'blurred' };
+	const gui = new GUI();
+	const options = { material: 'blurred' };
 
-    box.material = materials[options.material];
+	box.material = materials[ options.material ];
 
-    gui.add(box.scale, 'x', 0.1, 2, 0.01);
-    gui.add(box.scale, 'z', 0.1, 2, 0.01);
-    gui.add(options, 'material', Object.keys(materials)).onChange(name => {
+	gui.add( box.scale, 'x', 0.1, 2, 0.01 );
+	gui.add( box.scale, 'z', 0.1, 2, 0.01 );
+	gui.add( options, 'material', Object.keys( materials ) ).onChange( name => {
 
-        box.material = materials[name];
+		box.material = materials[ name ];
 
-    });
-    */
+	} );
 
 }
 
 function onWindowResize() {
 
-    camera.aspect = WIDTH / HEIGHT;
-    camera.updateProjectionMatrix();
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
 
-    renderer.setSize(WIDTH, HEIGHT);
+	renderer.setSize( window.innerWidth, window.innerHeight );
 
 }
 
 function animate() {
 
-    const delta = clock.getDelta();
+	const delta = clock.getDelta();
 
-    if (mixer) mixer.update(delta);
+	if ( mixer ) mixer.update( delta );
 
-    renderer.render(scene, camera);
+	renderer.render( scene, camera );
 
 }
-
-
-polyfill.runWindowEventLoop()
