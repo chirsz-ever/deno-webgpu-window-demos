@@ -149,6 +149,10 @@ let requestAnimationFrameCallbacks: FrameRequestCallback[] = [];
     requestAnimationFrameCallbacks.push(callback);
 }
 
+function sleep(timeout: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, timeout))
+}
+
 const VALIDATION = Deno.args[0] == "--enable-validation";
 
 let button0 = 0;
@@ -197,12 +201,23 @@ export async function runWindowEventLoop() {
             if (VALIDATION)
                 device.pushErrorScope("validation");
 
-            const currentCallbacks = requestAnimationFrameCallbacks;
-            requestAnimationFrameCallbacks = [];
-            while (currentCallbacks.length != 0) {
-                const callback = currentCallbacks.pop();
-                // FIXME: pass exact time
-                callback!(0);
+            if (requestAnimationFrameCallbacks.length != 0) {
+                const currentCallbacks = requestAnimationFrameCallbacks;
+                requestAnimationFrameCallbacks = [];
+                while (currentCallbacks.length != 0) {
+                    const callback = currentCallbacks.pop();
+                    const t = performance.now();
+                    callback!(t);
+                }
+                // WORKAROUND:
+                // in every frame, the processing must be:
+                //
+                // context.getCurrentTexture()
+                // // ...
+                // surface.present()
+                //
+                // so we need wait here for calling getCurrentTexture()
+                await sleep(0);
                 surface.present();
             }
 
@@ -213,7 +228,7 @@ export async function runWindowEventLoop() {
                 });
 
             // FIXME: deno_sdl2 UI events would block network events?
-            await new Promise((resolve) => setTimeout(resolve, 0));
+            await sleep(0);
         }
     }
 }
