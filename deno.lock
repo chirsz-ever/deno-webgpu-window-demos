@@ -3,7 +3,7 @@
   "packages": {
     "specifiers": {
       "jsr:@divy/sdl2@0.10.5": "jsr:@divy/sdl2@0.10.5",
-      "npm:three@0.164.0": "npm:three@0.164.0"
+      "npm:three@0.165.0": "npm:three@0.165.0"
     },
     "jsr": {
       "@divy/sdl2@0.10.5": {
@@ -11,8 +11,8 @@
       }
     },
     "npm": {
-      "three@0.164.0": {
-        "integrity": "sha512-bmfVMlDUSiqjR3LxLmIpJRQc4R1z75F/kR9OgJnlI2eVeOyyGkSpjzkLD85WWEKXM9pq5TuUWztf3rKH7P1Fdw==",
+      "three@0.165.0": {
+        "integrity": "sha512-cc96IlVYGydeceu0e5xq70H8/yoVT/tXBxV/W8A/U6uOq7DXc4/s1Mkmnu6SqoYGhSRWWYFOhVwvq6V0VtbplA==",
         "dependencies": {}
       }
     }
@@ -246,7 +246,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@divy/sdl2@0.10.5",
-      "npm:three@0.164.0"
+      "npm:three@0.165.0"
     ]
   }
 }

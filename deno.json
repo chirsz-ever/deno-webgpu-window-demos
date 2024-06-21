@@ -1,6 +1,6 @@
 {
     "imports": {
-        "three": "npm:three@0.164.0",
+        "three": "npm:three@0.165.0",
         "deno_sdl2": "jsr:@divy/sdl2@0.10.5",
         "std/": "https://deno.land/std@0.224.0/",
         "three/addons/libs/lil-gui.module.min.js": "./threejs/polyfill/gui.ts",
