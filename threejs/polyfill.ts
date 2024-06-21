@@ -581,13 +581,13 @@ async function loadImageData(data: ArrayBuffer): Promise<ImageData> {
     return imgData;
 }
 
-const reIlligalCast = /[ui]32\(\s*(\d+)\.0\s*\)/g;
+const reIlligalCast = /[ui]32\(\s*([\d.]+)\s*\)/g;
 
 // FIXME: wgpu or three.js bug
 const GPUDevice_createShaderModule_origin = GPUDevice.prototype.createShaderModule;
 GPUDevice.prototype.createShaderModule = function (descriptor: GPUShaderModuleDescriptor) {
     if (descriptor.code.search(reIlligalCast) != -1) {
-        descriptor.code = descriptor.code.replaceAll(reIlligalCast, "$1");
+        descriptor.code = descriptor.code.replaceAll(reIlligalCast, (_, n) => Math.trunc(n).toString());
     }
     return GPUDevice_createShaderModule_origin.call(this, descriptor);
 };
