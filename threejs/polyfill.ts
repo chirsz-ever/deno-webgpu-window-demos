@@ -267,7 +267,12 @@ FontLoader.prototype.load = async function (uri: string, onLoad: any) {
 
 FileLoader.prototype.load = async function (uri: string, onLoad: any) {
     const data = await load_with_cache(this.path + uri);
-    onLoad(data);
+    if (uri.endsWith(".json")) {
+        const s = decoder.decode(data);
+        onLoad(s);
+    } else {
+        onLoad(data);
+    }
 }
 
 const _log_handler = {

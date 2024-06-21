@@ -1,11 +1,7 @@
 // TODO?: support lil-gui of three.js
 export class GUI {
     add() {
-        return {
-            step() { },
-            onChange() { },
-            name() { },
-        };
+        return new Item;
     }
 
     addFolder() {
@@ -16,5 +12,17 @@ export class GUI {
 
     static update() {
 
+    }
+}
+
+class Item {
+    step() {
+        return this;
+    }
+    onChange() {
+        return this;
+    }
+    name() {
+        return this;
     }
 }
