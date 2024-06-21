@@ -392,18 +392,30 @@ class GPUCanvasContextMock implements GPUCanvasContext {
         private height: number,
     ) { }
 
+    #configuration?: GPUCanvasConfiguration;
+
     configure(configuration: GPUCanvasConfiguration): undefined {
         // FIXME: https://github.com/denoland/deno/issues/23508
         configuration.width = this.width;
         configuration.height = this.height;
-        // FIXME: https://github.com/denoland/deno/issues/23509
+        // WORKAROUND: Error: Surface is not configured for presentation
+        // see https://github.com/denoland/deno/issues/23509
         if (configuration.alphaMode === "premultiplied") {
-            configuration.alphaMode = "opaque";
+            delete configuration.alphaMode;
         }
         this.context.configure(configuration);
+        this.#configuration = { ...configuration };
     }
 
-    getCurrentTexture() {
+    getCurrentTexture(): GPUTexture {
+        // WORKAROUND: Error: Invalid Surface Status
+        // see https://github.com/denoland/deno/issues/23407
+        try {
+            return this.context.getCurrentTexture();
+        } catch (_e) {
+            // console.error(_e);
+            this.context.configure(this.#configuration!);
+        }
         return this.context.getCurrentTexture();
     }
 
