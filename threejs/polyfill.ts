@@ -156,6 +156,7 @@ function sleep(timeout: number): Promise<void> {
 const VALIDATION = Deno.args[0] == "--enable-validation";
 
 let button0 = 0;
+let currentTextureGot = false;
 
 export async function runWindowEventLoop() {
     // TODO: Handle mouse and keyboard events, handle window resize event
@@ -209,16 +210,11 @@ export async function runWindowEventLoop() {
                     const callback = currentCallbacks.pop();
                     callback!(t);
                 }
-                // WORKAROUND:
-                // in every frame, the processing must be:
-                //
-                // context.getCurrentTexture()
-                // // ...
-                // surface.present()
-                //
-                // so we need wait here for calling getCurrentTexture()
-                await sleep(0);
+            }
+
+            if (currentTextureGot) {
                 surface.present();
+                currentTextureGot = false;
             }
 
             if (VALIDATION)
@@ -447,15 +443,27 @@ class GPUCanvasContextMock implements GPUCanvasContext {
     }
 
     getCurrentTexture(): GPUTexture {
+        // WORKAROUND: context.getCurrentTexture() cannot be invoked twice without present
+        // FIXME: this is very slow...
+        // see https://github.com/denoland/deno/issues/24313
+        if (currentTextureGot) {
+            surface.present();
+            currentTextureGot = false;
+        }
+
         // WORKAROUND: Error: Invalid Surface Status
         // see https://github.com/denoland/deno/issues/23407
+        let texture;
         try {
-            return this.context.getCurrentTexture();
+            texture = this.context.getCurrentTexture();
         } catch (_e) {
             // console.error(_e);
             this.context.configure(this.#configuration!);
+            texture = this.context.getCurrentTexture();
         }
-        return this.context.getCurrentTexture();
+
+        currentTextureGot = true;
+        return texture;
     }
 
     unconfigure(): undefined {
