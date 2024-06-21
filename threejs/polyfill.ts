@@ -204,9 +204,9 @@ export async function runWindowEventLoop() {
             if (requestAnimationFrameCallbacks.length != 0) {
                 const currentCallbacks = requestAnimationFrameCallbacks;
                 requestAnimationFrameCallbacks = [];
+                const t = performance.now();
                 while (currentCallbacks.length != 0) {
                     const callback = currentCallbacks.pop();
-                    const t = performance.now();
                     callback!(t);
                 }
                 // WORKAROUND:
