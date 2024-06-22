@@ -4,4 +4,8 @@ export default class Stats {
     init() { }
     begin() { }
     end() { }
+
+    dom = {
+        style: {}
+    }
 }
