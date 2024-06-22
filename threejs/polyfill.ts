@@ -355,7 +355,13 @@ class Image extends EventTarget {
 }
 
 class ElementMock extends EventTarget {
-    appendChild() { }
+    style = {}
+    appendChild(_target?: EventTarget) {
+        // TODO: bubble events
+    }
+    getRootNode() {
+        return this;
+    }
 }
 
 let canvasCount = 0;
