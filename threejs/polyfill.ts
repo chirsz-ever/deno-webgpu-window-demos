@@ -244,6 +244,9 @@ async function load_with_cache(uri: string): Promise<ArrayBuffer> {
         data = (await Deno.readFile(localPath)).buffer;
     } else {
         const res = await fetch(remotePath);
+        if (!res.ok) {
+            throw new Error(`fetch ${remotePath} failed: ${res.status}`);
+        }
         data = await res.arrayBuffer();
         await Deno.mkdir(dirname(localPath), { recursive: true });
         await Deno.writeFile(localPath, new Uint8Array(data));
@@ -308,6 +311,9 @@ class Image extends EventTarget {
                 data = (await Deno.readFile(localPath)).buffer;
             } else {
                 const res = await fetch(remotePath);
+                if (!res.ok) {
+                    throw new Error(`fetch ${remotePath} failed: ${res.status}`);
+                }
                 data = await res.arrayBuffer();
                 await Deno.mkdir(dirname(cachePath), { recursive: true });
                 await Deno.writeFile(cachePath, new Uint8Array(data));
