@@ -16,8 +16,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { FileLoader } from 'three';
 
-const WIDTH = 800;
-const HEIGHT = 600;
+const WIDTH = 1000;
+const HEIGHT = 750;
 
 class MouseEvent extends Event {
     altKey: boolean = false;
