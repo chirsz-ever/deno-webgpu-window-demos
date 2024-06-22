@@ -386,6 +386,10 @@ if (!globalThis.window)
 // TODO: Retina Display?
 (window as any).devicePixelRatio = 1;
 // TODO: window.addEventListener
+// TODO: support to pass query params from command arguments
+(window as any).location = {
+    search: ''
+};
 
 // ----- May be fixed/implemented in the future -----
 
