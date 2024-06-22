@@ -41,7 +41,7 @@ if ( m|<script type="module">| ) {
     if ( m|</script>| ) {
         exit;
     }
-    if (/^\s*init\(\);/) {
+    if (/^\s*init\(\)/) {
         print "/* POLYFILL */\n";
         print "import * as polyfill from \"./polyfill.ts\";\n";
         print "await polyfill.init(\"'"$TITLE"'\");\n\n";
@@ -50,7 +50,7 @@ if ( m|<script type="module">| ) {
     if (s|new THREE\.CanvasTexture\( new FlakesTexture\(\) \);|textureLoader.load( "polyfill-textures/FlakesTexture.png" );|) {
         print "$pre_indent/* POLYFILL */\n";
     }
-    if (s|from '\''./jsm/|from '\''three/addons/|) {
+    elsif (s|from '\''./jsm/|from '\''three/addons/|) {
         print "$pre_indent/* POLYFILL */\n";
     }
     s|^\t\t\t||;
