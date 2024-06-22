@@ -50,6 +50,9 @@ if ( m|<script type="module">| ) {
     if (s|new THREE\.CanvasTexture\( new FlakesTexture\(\) \);|textureLoader.load( "polyfill-textures/FlakesTexture.png" );|) {
         print "$pre_indent/* POLYFILL */\n";
     }
+    if (s|from '\''./jsm/|from '\''three/addons/|) {
+        print "$pre_indent/* POLYFILL */\n";
+    }
     s|^\t\t\t||;
     print;
 }')

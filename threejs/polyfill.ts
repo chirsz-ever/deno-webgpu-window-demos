@@ -273,11 +273,17 @@ FontLoader.prototype.load = async function (uri: string, onLoad: any) {
 FileLoader.prototype.load = async function (uri: string, onLoad: any) {
     const full_uri = this.path ? join(this.path, uri) : uri;
     const data = await load_with_cache(full_uri);
-    if (uri.endsWith(".json")) {
-        const s = decoder.decode(data);
-        onLoad(s);
-    } else {
-        onLoad(data);
+
+    if (onLoad) {
+        let result;
+        if (!this.responseType || this.responseType == 'text') {
+            result = decoder.decode(data);
+        } else if (this.responseType == 'arraybuffer') {
+            result = data;
+        } else {
+            throw new Error(`TODO: support responseType "${this.responseType}"`);
+        }
+        onLoad(result);
     }
 }
 
