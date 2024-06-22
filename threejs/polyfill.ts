@@ -237,8 +237,9 @@ const BASE_URL = "https://threejs.org/examples/";
 
 async function load_with_cache(uri: string): Promise<ArrayBuffer> {
     // console.log(`loading ${uri}`);
-    const localPath = join(import.meta.dirname!, uri);
-    const remotePath = BASE_URL + uri;
+    const relative_uri = uri.startsWith(BASE_URL) ? uri.slice(BASE_URL.length) : uri;
+    const localPath = join(import.meta.dirname!, relative_uri);
+    const remotePath = BASE_URL + relative_uri;
     let data: ArrayBuffer;
     if (await fs.exists(localPath)) {
         data = (await Deno.readFile(localPath)).buffer;
@@ -256,8 +257,9 @@ async function load_with_cache(uri: string): Promise<ArrayBuffer> {
 }
 
 GLTFLoader.prototype.load = async function (uri: string, ...args: any[]) {
-    const model_data = await load_with_cache(uri);
-    this.parse(model_data, dirname(BASE_URL + uri), ...args);
+    const full_uri = join(this.path, uri);
+    const model_data = await load_with_cache(full_uri);
+    this.parse(model_data, dirname(BASE_URL + full_uri) + "/", ...args);
 };
 
 const decoder = new TextDecoder();
@@ -269,7 +271,8 @@ FontLoader.prototype.load = async function (uri: string, onLoad: any) {
 };
 
 FileLoader.prototype.load = async function (uri: string, onLoad: any) {
-    const data = await load_with_cache(this.path + uri);
+    const full_uri = this.path ? join(this.path, uri) : uri;
+    const data = await load_with_cache(full_uri);
     if (uri.endsWith(".json")) {
         const s = decoder.decode(data);
         onLoad(s);
