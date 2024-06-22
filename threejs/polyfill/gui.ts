@@ -10,6 +10,8 @@ export class GUI {
         }
     }
 
+    open() { }
+
     static update() {
 
     }
