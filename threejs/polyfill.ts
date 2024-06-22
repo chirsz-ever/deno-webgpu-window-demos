@@ -233,20 +233,32 @@ const BASE_URL = "https://threejs.org/examples/";
 
 async function load_with_cache(uri: string): Promise<ArrayBuffer> {
     // console.log(`loading ${uri}`);
-    const relative_uri = uri.startsWith(BASE_URL) ? uri.slice(BASE_URL.length) : uri;
-    const localPath = join(import.meta.dirname!, relative_uri);
-    const remotePath = BASE_URL + relative_uri;
+    const isBlobUri = uri.startsWith("blob:");
+    let relative_uri;
+    let localPath;
+    if (!isBlobUri) {
+        relative_uri = uri.startsWith(BASE_URL) ? uri.slice(BASE_URL.length) : uri;
+        localPath = join(import.meta.dirname!, relative_uri);
+    }
+
     let data: ArrayBuffer;
-    if (await fs.exists(localPath)) {
-        data = (await Deno.readFile(localPath)).buffer;
+    if (isBlobUri) {
+        const res = await fetch(uri);
+        if (!res.ok) {
+            throw new Error(`fetch ${uri} failed: ${res.status}`);
+        }
+        data = await res.arrayBuffer();
+    } else if (await fs.exists(localPath!)) {
+        data = (await Deno.readFile(localPath!)).buffer;
     } else {
+        const remotePath = isBlobUri ? uri : BASE_URL + relative_uri;
         const res = await fetch(remotePath);
         if (!res.ok) {
             throw new Error(`fetch ${remotePath} failed: ${res.status}`);
         }
         data = await res.arrayBuffer();
-        await Deno.mkdir(dirname(localPath), { recursive: true });
-        await Deno.writeFile(localPath, new Uint8Array(data));
+        await Deno.mkdir(dirname(localPath!), { recursive: true });
+        await Deno.writeFile(localPath!, new Uint8Array(data));
         console.log(`${remotePath} is cached to ${localPath}`);
     }
     return data;
