@@ -41,7 +41,8 @@ if ( m|<script type="module">| ) {
     if ( m|</script>| ) {
         exit;
     }
-    if (/^\s*init\(\)/) {
+    if (not $pinit and $_ =~ /^\s*(\w+)/ and $1 ne "import") {
+        $pinit=true;
         print "/* POLYFILL */\n";
         print "import * as polyfill from \"./polyfill.ts\";\n";
         print "await polyfill.init(\"'"$TITLE"'\");\n\n";
