@@ -236,7 +236,7 @@ export async function runWindowEventLoop() {
 const BASE_URL = "https://threejs.org/examples/";
 
 async function load_with_cache(uri: string): Promise<ArrayBuffer> {
-    console.log(`loading ${uri}`);
+    // console.log(`loading ${uri}`);
     const localPath = join(import.meta.dirname!, uri);
     const remotePath = BASE_URL + uri;
     let data: ArrayBuffer;
@@ -298,7 +298,7 @@ class Image extends EventTarget {
     _imageData: ImageData | undefined;
 
     set src(uri: string) {
-        console.log(`loading ${uri}`);
+        // console.log(`loading ${uri}`);
         const cachePath = join(import.meta.dirname!, uri);
         const localPath = cachePath;
         const remotePath = new URL(uri, "https://threejs.org/examples/");
