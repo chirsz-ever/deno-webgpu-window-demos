@@ -27,4 +27,10 @@ class Item {
     name() {
         return this;
     }
+    min() {
+        return this;
+    }
+    max() {
+        return this;
+    }
 }
