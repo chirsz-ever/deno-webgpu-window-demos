@@ -387,6 +387,10 @@ let canvasCount = 0;
         return new ElementMock();
     },
 
+    addEventListener(event: string, _listener: any, _options: any) {
+        console.log(`document.addEventListener("${event}", ...)`)
+    },
+
     body: {
         appendChild() { }
     }

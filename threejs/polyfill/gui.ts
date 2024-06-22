@@ -1,5 +1,9 @@
 // TODO?: support lil-gui of three.js
 export class GUI {
+    domElement = {
+        style: {}
+    }
+
     add() {
         return new Item;
     }
@@ -8,6 +12,10 @@ export class GUI {
         return {
             add() { }
         }
+    }
+
+    addColor() {
+        return new Item;
     }
 
     open() { }
@@ -31,6 +39,9 @@ class Item {
         return this;
     }
     max() {
+        return this;
+    }
+    listen() {
         return this;
     }
 }
