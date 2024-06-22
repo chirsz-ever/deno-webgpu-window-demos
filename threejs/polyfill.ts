@@ -245,8 +245,8 @@ async function load_with_cache(uri: string): Promise<ArrayBuffer> {
     } else {
         const res = await fetch(remotePath);
         data = await res.arrayBuffer();
-        Deno.mkdir(dirname(localPath), { recursive: true });
-        Deno.writeFile(localPath, new Uint8Array(data));
+        await Deno.mkdir(dirname(localPath), { recursive: true });
+        await Deno.writeFile(localPath, new Uint8Array(data));
         console.log(`${remotePath} is cached to ${localPath}`);
     }
     return data;
@@ -309,8 +309,8 @@ class Image extends EventTarget {
             } else {
                 const res = await fetch(remotePath);
                 data = await res.arrayBuffer();
-                Deno.mkdir(dirname(cachePath), { recursive: true });
-                Deno.writeFile(cachePath, new Uint8Array(data));
+                await Deno.mkdir(dirname(cachePath), { recursive: true });
+                await Deno.writeFile(cachePath, new Uint8Array(data));
                 console.log(`${remotePath} is cached to ${cachePath}`);
             }
             const imageData = await loadImageData(data);
