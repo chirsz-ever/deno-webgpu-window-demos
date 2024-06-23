@@ -640,3 +640,11 @@ GPUDevice.prototype.createShaderModule = function (descriptor: GPUShaderModuleDe
     }
     return GPUDevice_createShaderModule_origin.call(this, descriptor);
 };
+
+// FIXME: Deno 1.44.4 device.createRenderPipelineAsync not return a Promise
+// see https://github.com/denoland/deno/issues/24317
+const GPUDevice_createRenderPipelineAsync_origin = GPUDevice.prototype.createRenderPipelineAsync;
+GPUDevice.prototype.createRenderPipelineAsync = function (descriptor: GPURenderPipelineDescriptor) {
+    const rp = GPUDevice_createRenderPipelineAsync_origin.call(this, descriptor);
+    return Promise.resolve(rp);
+}
