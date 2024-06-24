@@ -166,6 +166,8 @@ export async function runWindowEventLoop() {
         } else if (event.type === EventType.KeyDown) {
             if (getKeyName(event.keysym.sym) === "Escape") {
                 break;
+            } else if (getKeyName(event.keysym.sym) === "F1") {
+                Deno.exit(1)
             }
         } else if (event.type == EventType.MouseButtonDown) {
             const evt = new MouseEvent("pointerdown");
