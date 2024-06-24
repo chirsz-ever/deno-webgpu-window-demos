@@ -140,6 +140,7 @@ let win: Window;
 let surface: Deno.UnsafeWindowSurface;
 let canvasDomMock: CanvasDomMock;
 let contextMock: GPUCanvasContextMock;
+const preferredFormat = navigator.gpu.getPreferredCanvasFormat();
 
 type FrameRequestCallback = (time: number) => void;
 
@@ -215,6 +216,7 @@ export async function runWindowEventLoop() {
             }
 
             if (currentTextureGot) {
+                contextMock._renderCurrentTexture();
                 surface.present();
                 currentTextureGot = false;
             }
@@ -452,6 +454,7 @@ class GPUCanvasContextMock implements GPUCanvasContext {
     ) { }
 
     #configuration?: GPUCanvasConfiguration;
+    #currentTexture?: GPUTexture;
 
     configure(configuration: GPUCanvasConfiguration): undefined {
         // FIXME: https://github.com/denoland/deno/issues/23508
@@ -468,31 +471,159 @@ class GPUCanvasContextMock implements GPUCanvasContext {
 
     getCurrentTexture(): GPUTexture {
         // WORKAROUND: context.getCurrentTexture() cannot be invoked twice without present
-        // FIXME: this is very slow...
         // see https://github.com/denoland/deno/issues/24313
-        if (currentTextureGot) {
-            surface.present();
-            currentTextureGot = false;
-        }
-
-        // WORKAROUND: Error: Invalid Surface Status
-        // see https://github.com/denoland/deno/issues/23407
-        let texture;
-        try {
-            texture = this.context.getCurrentTexture();
-        } catch (_e) {
-            // console.error(_e);
-            this.context.configure(this.#configuration!);
-            texture = this.context.getCurrentTexture();
+        if (!this.#currentTexture) {
+            this.#currentTexture = device.createTexture({
+                format: preferredFormat,
+                size: [this.width, this.height],
+                usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            })
         }
 
         currentTextureGot = true;
-        return texture;
+        return this.#currentTexture;
     }
 
     unconfigure(): undefined {
         this.context.unconfigure();
     }
+
+    _renderCurrentTexture() {
+        // WORKAROUND: Error: Invalid Surface Status
+        // see https://github.com/denoland/deno/issues/23407
+        let surfaceTexture;
+        try {
+            surfaceTexture = this.context.getCurrentTexture();
+        } catch (_e) {
+            // console.error(_e);
+            this.context.configure(this.#configuration!);
+            surfaceTexture = this.context.getCurrentTexture();
+        }
+
+        const cmdEncoder = device.createCommandEncoder();
+        const renderPass = cmdEncoder.beginRenderPass({
+            colorAttachments: [{
+                loadOp: "clear",
+                storeOp: "store",
+                clearValue: [1, 0, 0, 1],
+                view: surfaceTexture.createView(),
+            }]
+        });
+        renderPass.setPipeline(simpleRenderPipeline());
+        renderPass.setVertexBuffer(0, simpleVertexBuffer());
+        renderPass.setBindGroup(0, this._bindGroup());
+        renderPass.draw(6);
+        renderPass.end();
+        device.queue.submit([cmdEncoder.finish()]);
+    }
+
+    #bindGroup?: GPUBindGroup
+
+    _bindGroup(): GPUBindGroup {
+        if (!this.#bindGroup) {
+            const sampler = device.createSampler();
+            this.#bindGroup = device.createBindGroup({
+                entries: [{
+                    binding: 0,
+                    resource: this.getCurrentTexture().createView(),
+                },
+                {
+                    binding: 1,
+                    resource: sampler,
+                }],
+                layout: simpleRenderPipeline().getBindGroupLayout(0),
+            });
+        }
+        return this.#bindGroup;
+    }
+}
+
+const simpleShader = `
+struct VSOut {
+  @builtin(position) pos: vec4f,
+  @location(0) tex_coord: vec2f,
+};
+
+@vertex
+fn vert_main(
+    @location(0) position: vec2<f32>,
+) -> VSOut {
+    var out: VSOut;
+    out.pos = vec4<f32>(position.x, -position.y, 0.0, 1.0);
+    out.tex_coord = position * 0.5 + 0.5;
+    return out;
+}
+
+@group(0) @binding(0) var ourTexture: texture_2d<f32>;
+@group(0) @binding(1) var ourSampler: sampler;
+
+@fragment
+fn frag_main(@location(0) tex_coord: vec2f) -> @location(0) vec4<f32> {
+    return textureSample(ourTexture, ourSampler, tex_coord);
+}
+`;
+
+let _simpleRenderPipeline: GPURenderPipeline | undefined;
+function simpleRenderPipeline(): GPURenderPipeline {
+    if (_simpleRenderPipeline)
+        return _simpleRenderPipeline;
+
+    const simpleMoudle = device.createShaderModule({
+        code: simpleShader,
+    });
+    _simpleRenderPipeline = device.createRenderPipeline({
+        layout: "auto",
+        vertex: {
+            module: simpleMoudle,
+            buffers: [
+                {
+                    arrayStride: 4 * 2,
+                    attributes: [
+                        {
+                            format: "float32x2",
+                            offset: 0,
+                            shaderLocation: 0,
+                        },
+                    ],
+                },
+            ],
+        },
+        fragment: {
+            module: simpleMoudle,
+            targets: [
+                {
+                    format: preferredFormat,
+                },
+            ],
+        },
+    });
+    return _simpleRenderPipeline;
+}
+
+let _simpleVertexBuffer: GPUBuffer | undefined;
+function simpleVertexBuffer(): GPUBuffer {
+    if (_simpleVertexBuffer)
+        return _simpleVertexBuffer;
+
+    const vertexBufferData = new Float32Array([
+        -1, -1,
+        -1, 1,
+        1, -1,
+        1, -1,
+        -1, 1,
+        1, 1,
+    ]);;
+
+    _simpleVertexBuffer = device.createBuffer({
+        usage: GPUBufferUsage.VERTEX,
+        mappedAtCreation: true,
+        size: vertexBufferData.byteLength,
+    });
+    const data = new Uint8Array(_simpleVertexBuffer.getMappedRange());
+    data.set(new Int8Array(vertexBufferData.buffer));
+    _simpleVertexBuffer.unmap();
+
+    return _simpleVertexBuffer;
 }
 
 // TypeScript definitions for WebGPU: https://github.com/gpuweb/types/blob/main/dist/index.d.ts
