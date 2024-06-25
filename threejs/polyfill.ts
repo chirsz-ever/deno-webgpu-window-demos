@@ -510,7 +510,6 @@ class GPUCanvasContextMock implements GPUCanvasContext {
             }]
         });
         renderPass.setPipeline(simpleRenderPipeline());
-        renderPass.setVertexBuffer(0, simpleVertexBuffer());
         renderPass.setBindGroup(0, this._bindGroup());
         renderPass.draw(6);
         renderPass.end();
@@ -521,16 +520,13 @@ class GPUCanvasContextMock implements GPUCanvasContext {
 
     _bindGroup(): GPUBindGroup {
         if (!this.#bindGroup) {
-            const sampler = device.createSampler();
             this.#bindGroup = device.createBindGroup({
-                entries: [{
-                    binding: 0,
-                    resource: this.getCurrentTexture().createView(),
-                },
-                {
-                    binding: 1,
-                    resource: sampler,
-                }],
+                entries: [
+                    {
+                        binding: 0,
+                        resource: this.getCurrentTexture().createView(),
+                    }
+                ],
                 layout: simpleRenderPipeline().getBindGroupLayout(0),
             });
         }
@@ -538,28 +534,26 @@ class GPUCanvasContextMock implements GPUCanvasContext {
     }
 }
 
-const simpleShader = `
-struct VSOut {
-  @builtin(position) pos: vec4f,
-  @location(0) tex_coord: vec2f,
-};
-
+const simpleShader = /* wgsl */`
 @vertex
-fn vert_main(
-    @location(0) position: vec2<f32>,
-) -> VSOut {
-    var out: VSOut;
-    out.pos = vec4<f32>(position.x, -position.y, 0.0, 1.0);
-    out.tex_coord = position * 0.5 + 0.5;
-    return out;
+fn vert_main(@builtin(vertex_index) vindex: u32) -> @builtin(position) vec4f {
+    // FIXME: not 'let': The expression may only be indexed by a constant
+    var vertexes = array(
+        vec2f(-1.0,  1.0),
+        vec2f(-1.0, -1.0),
+        vec2f( 1.0,  1.0),
+        vec2f( 1.0,  1.0),
+        vec2f(-1.0, -1.0),
+        vec2f( 1.0, -1.0),
+    );
+    return vec4<f32>(vertexes[vindex], 0.0, 1.0);
 }
 
 @group(0) @binding(0) var ourTexture: texture_2d<f32>;
-@group(0) @binding(1) var ourSampler: sampler;
 
 @fragment
-fn frag_main(@location(0) tex_coord: vec2f) -> @location(0) vec4<f32> {
-    return textureSample(ourTexture, ourSampler, tex_coord);
+fn frag_main(@builtin(position) frag_coord: vec4f) -> @location(0) vec4<f32> {
+    return textureLoad(ourTexture, vec2i(frag_coord.xy), 0);
 }
 `;
 
@@ -575,18 +569,6 @@ function simpleRenderPipeline(): GPURenderPipeline {
         layout: "auto",
         vertex: {
             module: simpleMoudle,
-            buffers: [
-                {
-                    arrayStride: 4 * 2,
-                    attributes: [
-                        {
-                            format: "float32x2",
-                            offset: 0,
-                            shaderLocation: 0,
-                        },
-                    ],
-                },
-            ],
         },
         fragment: {
             module: simpleMoudle,
@@ -598,32 +580,6 @@ function simpleRenderPipeline(): GPURenderPipeline {
         },
     });
     return _simpleRenderPipeline;
-}
-
-let _simpleVertexBuffer: GPUBuffer | undefined;
-function simpleVertexBuffer(): GPUBuffer {
-    if (_simpleVertexBuffer)
-        return _simpleVertexBuffer;
-
-    const vertexBufferData = new Float32Array([
-        -1, -1,
-        -1, 1,
-        1, -1,
-        1, -1,
-        -1, 1,
-        1, 1,
-    ]);;
-
-    _simpleVertexBuffer = device.createBuffer({
-        usage: GPUBufferUsage.VERTEX,
-        mappedAtCreation: true,
-        size: vertexBufferData.byteLength,
-    });
-    const data = new Uint8Array(_simpleVertexBuffer.getMappedRange());
-    data.set(new Int8Array(vertexBufferData.buffer));
-    _simpleVertexBuffer.unmap();
-
-    return _simpleVertexBuffer;
 }
 
 // TypeScript definitions for WebGPU: https://github.com/gpuweb/types/blob/main/dist/index.d.ts
