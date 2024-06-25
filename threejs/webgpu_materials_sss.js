@@ -11,13 +11,13 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-let container, stats;
-let camera, scene, renderer;
-let model;
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js webgpu - sss");
+
+let container, stats;
+let camera, scene, renderer;
+let model;
 
 init();
 

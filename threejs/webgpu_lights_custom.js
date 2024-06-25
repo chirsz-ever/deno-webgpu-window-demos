@@ -10,6 +10,10 @@ import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Custom Lighting Model");
+
 class CustomLightingModel extends LightingModel {
 
 	direct( { lightColor, reflectedLight }, stack ) {
@@ -23,10 +27,6 @@ class CustomLightingModel extends LightingModel {
 let camera, scene, renderer;
 
 let light1, light2, light3;
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Custom Lighting Model");
 
 init();
 

@@ -1,8 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r164/examples/webgpu_clearcoat.html
+// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_clearcoat.html
 
 import * as THREE from 'three';
 
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
 import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 import Stats from 'three/addons/libs/stats.module.js';
@@ -12,6 +11,10 @@ import { HDRCubeTextureLoader } from 'three/addons/loaders/HDRCubeTextureLoader.
 
 import { FlakesTexture } from 'three/addons/textures/FlakesTexture.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js webgpu - materials - clearcoat");
+
 let container, stats;
 
 let camera, scene, renderer;
@@ -19,21 +22,9 @@ let camera, scene, renderer;
 let particleLight;
 let group;
 
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - materials - clearcoat");
-
 init();
 
 function init() {
-
-	if ( WebGPU.isAvailable() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU support' );
-
-	}
 
 	container = document.createElement( 'div' );
 	document.body.appendChild( container );

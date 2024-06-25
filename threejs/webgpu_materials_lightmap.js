@@ -10,12 +10,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import { MeshBasicNodeMaterial, vec4, color, positionLocal, mix } from 'three/nodes';
 
-let container, stats;
-let camera, scene, renderer;
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js webgl - materials - lightmap");
+
+let container, stats;
+let camera, scene, renderer;
 
 init();
 

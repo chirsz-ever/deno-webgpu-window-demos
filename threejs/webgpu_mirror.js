@@ -1,4 +1,4 @@
-// https://github.com/mrdoob/three.js/blob/r164/examples/webgpu_mirror.html
+// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_mirror.html
 
 import * as THREE from 'three';
 import { MeshPhongNodeMaterial, reflector, uv, texture, color } from 'three/nodes';
@@ -7,15 +7,15 @@ import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js webgpu - mirror");
+
 let camera, scene, renderer;
 
 let cameraControls;
 
 let sphereGroup, smallSphere;
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - mirror");
 
 init();
 

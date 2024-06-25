@@ -16,6 +16,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import Stats from 'stats-gl';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Compute Particles Snow");
+
 const maxParticleCount = 100000;
 
 let camera, scene, renderer;
@@ -24,10 +28,6 @@ let computeParticles;
 let postProcessing;
 
 let collisionCamera, collisionPosRT, collisionPosMaterial;
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Compute Particles Snow");
 
 init();
 

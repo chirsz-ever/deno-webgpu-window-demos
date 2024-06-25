@@ -13,11 +13,11 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-let camera, scene, renderer, controls;
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js webgpu - sheen");
+
+let camera, scene, renderer, controls;
 
 init();
 

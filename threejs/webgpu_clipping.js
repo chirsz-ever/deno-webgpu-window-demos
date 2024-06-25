@@ -1,4 +1,4 @@
-// https://github.com/mrdoob/three.js/blob/r164/examples/webgpu_clipping.html
+// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_clipping.html
 
 import * as THREE from 'three';
 import { MeshPhongNodeMaterial } from 'three/nodes';
@@ -14,11 +14,11 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-let camera, scene, renderer, startTime, object, stats;
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js webgpu - clipping planes");
+
+let camera, scene, renderer, startTime, object, stats;
 
 init();
 

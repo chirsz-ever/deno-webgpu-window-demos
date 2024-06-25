@@ -1,4 +1,4 @@
-// https://github.com/mrdoob/three.js/blob/81b782ad8b13eae6dbd3335cf295f7a00bba98ff/examples/webgpu_backdrop_area.html
+// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_backdrop_area.html
 
 import * as THREE from 'three';
 import { color, depth, depthTexture, toneMapping, viewportSharedTexture, viewportMipTexture, viewportTopLeft, checker, uv, modelScale, MeshBasicNodeMaterial } from 'three/nodes';
@@ -14,12 +14,12 @@ import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-let camera, scene, renderer;
-let mixer, clock;
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js - WebGPU - Backdrop Area");
+
+let camera, scene, renderer;
+let mixer, clock;
 
 init();
 

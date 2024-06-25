@@ -11,15 +11,15 @@ import WebGL from 'three/addons/capabilities/WebGL.js';
 import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 import StorageInstancedBufferAttribute from 'three/addons/renderers/common/StorageInstancedBufferAttribute.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Compute");
+
 let camera, scene, renderer;
 let computeNode;
 
 const pointerVector = new THREE.Vector2( - 10.0, - 10.0 ); // Out of bounds first
 const scaleVector = new THREE.Vector2( 1, 1 );
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Compute");
 
 init();
 

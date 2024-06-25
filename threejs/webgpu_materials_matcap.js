@@ -11,16 +11,16 @@ import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 
 import { MeshMatcapNodeMaterial } from 'three/nodes';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js webgpu - materials - matcap");
+
 let mesh, renderer, scene, camera;
 
 const API = {
 	color: 0xffffff, // sRGB
 	exposure: 1.0
 };
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - materials - matcap");
 
 init();
 

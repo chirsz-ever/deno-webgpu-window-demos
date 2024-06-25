@@ -13,6 +13,10 @@ import Stats from 'three/addons/libs/stats.module.js';
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Compute Particles");
+
 const particleCount = 1000000;
 
 const gravity = uniform( - .0098 );
@@ -27,10 +31,6 @@ let controls, stats;
 let computeParticles;
 
 const timestamps = document.getElementById( 'timestamps' );
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Compute Particles");
 
 init();
 

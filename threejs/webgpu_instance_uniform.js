@@ -14,6 +14,10 @@ import { TeapotGeometry } from 'three/addons/geometries/TeapotGeometry.js';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Instance Uniform");
+
 class InstanceUniformNode extends Node {
 
 	constructor() {
@@ -50,10 +54,6 @@ let camera, scene, renderer;
 let controls;
 
 const objects = [];
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Instance Uniform");
 
 init();
 

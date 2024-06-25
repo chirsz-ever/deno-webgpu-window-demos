@@ -12,6 +12,10 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
 import { MeshStandardNodeMaterial } from 'three/nodes';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js webgpu - materials - displacement map");
+
 let stats;
 let camera, scene, renderer, controls;
 
@@ -32,10 +36,6 @@ let pointLight, ambientLight;
 const height = 500; // of camera frustum
 
 let r = 0.0;
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - materials - displacement map");
 
 init();
 initGui();

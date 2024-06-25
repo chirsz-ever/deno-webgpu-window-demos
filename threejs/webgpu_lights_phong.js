@@ -13,13 +13,13 @@ import WebGL from 'three/addons/capabilities/WebGL.js';
 
 import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
-let camera, scene, renderer,
-	light1, light2, light3, light4,
-	stats, controls;
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js - WebGPU - Lights Phong");
+
+let camera, scene, renderer,
+	light1, light2, light3, light4,
+	stats, controls;
 
 init();
 

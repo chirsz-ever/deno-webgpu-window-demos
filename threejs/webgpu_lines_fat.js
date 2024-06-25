@@ -16,6 +16,10 @@ import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import * as GeometryUtils from 'three/addons/utils/GeometryUtils.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js webgpu - lines - fat");
+
 let line, renderer, scene, camera, camera2, controls, backgroundNode;
 let line1;
 let matLine, matLineBasic, matLineDashed;
@@ -25,10 +29,6 @@ let gui;
 // viewport
 let insetWidth;
 let insetHeight;
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - lines - fat");
 
 init();
 

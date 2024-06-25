@@ -15,6 +15,10 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Compute Particles Rain");
+
 const maxParticleCount = 50000;
 const instanceCount = maxParticleCount / 2;
 
@@ -26,10 +30,6 @@ let clock;
 
 let collisionBox, collisionCamera, collisionPosRT, collisionPosMaterial;
 let collisionBoxPos, collisionBoxPosUI;
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Compute Particles Rain");
 
 init();
 

@@ -8,11 +8,11 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
-let renderer, scene, camera, controls;
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js webgpu - GLTFloader + Anisotropy");
+
+let renderer, scene, camera, controls;
 
 init();
 

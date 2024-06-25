@@ -7,11 +7,11 @@ import WebGPU from 'three/addons/capabilities/WebGPU.js';
 import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 import StorageTexture from 'three/addons/renderers/common/StorageTexture.js';
 
-let camera, scene, renderer;
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js - WebGPU - Compute Texture");
+
+let camera, scene, renderer;
 
 init();
 render();

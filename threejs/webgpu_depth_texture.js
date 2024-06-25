@@ -12,15 +12,15 @@ import QuadMesh from 'three/addons/objects/QuadMesh.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Depth Texture");
+
 let camera, scene, controls, renderer;
 
 let quad, renderTarget;
 
 const dpr = window.devicePixelRatio;
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Depth Texture");
 
 init();
 

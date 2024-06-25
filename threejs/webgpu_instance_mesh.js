@@ -11,16 +11,16 @@ import WebGL from 'three/addons/capabilities/WebGL.js';
 
 import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Instance Mesh");
+
 let camera, scene, renderer, stats;
 
 let mesh;
 const amount = parseInt( window.location.search.slice( 1 ) ) || 10;
 const count = Math.pow( amount, 3 );
 const dummy = new THREE.Object3D();
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Instance Mesh");
 
 init();
 

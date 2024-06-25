@@ -14,16 +14,16 @@ import { RGBMLoader } from 'three/addons/loaders/RGBMLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import Stats from 'three/addons/libs/stats.module.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js webgpu - dynamic cube reflection");
+
 let camera, scene, renderer, stats;
 let cube, sphere, torus, material;
 
 let cubeCamera, cubeRenderTarget;
 
 let controls;
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - dynamic cube reflection");
 
 init();
 

@@ -11,11 +11,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
-let renderer, scene, camera, controls;
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js webgpu - GLTFloader + Iridescence");
+
+let renderer, scene, camera, controls;
 
 init().catch( function ( err ) {
 

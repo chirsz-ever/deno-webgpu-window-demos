@@ -11,12 +11,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import StorageBufferAttribute from 'three/addons/renderers/common/StorageBufferAttribute.js';
 
-let camera, scene, renderer;
-let computeUpdate;
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js webgpu - compute geometry");
+
+let camera, scene, renderer;
+let computeUpdate;
 
 init();
 

@@ -12,15 +12,15 @@ import { TeapotGeometry } from 'three/addons/geometries/TeapotGeometry.js';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Materials");
+
 let stats;
 
 let camera, scene, renderer;
 
 const objects = [], materials = [];
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Materials");
 
 init();
 

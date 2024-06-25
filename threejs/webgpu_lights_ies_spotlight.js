@@ -15,6 +15,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 /* POLYFILL */
 import { IESLoader } from 'three/addons/loaders/IESLoader.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js WebGPU - lights - ies spotlight");
+
 let renderer, scene, camera;
 let lights;
 
@@ -142,9 +146,5 @@ function render( time ) {
 	renderer.render( scene, camera );
 
 }
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js WebGPU - lights - ies spotlight");
 
 init();

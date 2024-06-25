@@ -1,4 +1,4 @@
-// https://github.com/mrdoob/three.js/blob/81b782ad8b13eae6dbd3335cf295f7a00bba98ff/examples/webgpu_backdrop_water.html
+// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_backdrop_water.html
 
 import * as THREE from 'three';
 import { color, depth, vec2, pass, depthTexture, normalWorld, triplanarTexture, texture, objectPosition, viewportTopLeft, viewportDepthTexture, viewportSharedTexture, mx_worley_noise_float, positionWorld, timerLocal, MeshStandardNodeMaterial, MeshBasicNodeMaterial } from 'three/nodes';
@@ -17,16 +17,16 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js - WebGPU - Backdrop Water");
+
 let camera, scene, renderer;
 let mixer, objects, clock;
 let model, floor, floorPosition;
 let postProcessing;
 let controls;
 let stats;
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Backdrop Water");
 
 init();
 

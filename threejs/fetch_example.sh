@@ -3,7 +3,7 @@
 if [[ $# == 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "USAGE:"
     echo "  $0 <URL>"
-    echo "  $0 --refetch-all"
+    echo "  $0 --refetch-all <tag>"
     exit
 fi
 
@@ -12,10 +12,24 @@ THIS_DIR=$(dirname "$(realpath "$0")")
 
 
 if [[ $1 == "--refetch-all" ]]; then
-    for f in "$THIS_DIR"/webgpu_*.js; do
-        URL=$(sed -nE '1s|^\s*//\s*(.*)\s*$|\1|p' "$f")
-        "$0" "$URL"
-    done
+    if [[ -z $2 ]]; then
+        for f in "$THIS_DIR"/webgpu_*.js; do
+            URL=$(sed -nE '1s|^\s*//\s*(.*)\s*$|\1|p' "$f")
+            "$0" "$URL"
+            sleep 1
+        done
+    else
+        for f in "$THIS_DIR"/webgpu_*.js; do
+            FILE_NAME=$(sed -n '1s|.*/\([^/]*\)$|\1|p' "$f")
+            URL="https://github.com/mrdoob/three.js/blob/$2/examples/$FILE_NAME"
+            echo "fetch $URL"
+            "$0" "$URL"
+            if [[ $(git diff -b -I'// https' "$f") == '' ]]; then
+                echo "no change. ignore $f"
+                git checkout "$f"
+            fi
+        done
+    fi
     exit
 fi
 
@@ -30,7 +44,7 @@ fi
 
 SCRIPT_FILE_NAME=$(basename "$URL_ORIGIN" ".html").js
 
-HTML_CONTENT=$(curl -L "$URL_RAW")
+HTML_CONTENT=$(curl --no-progress-meter -L "$URL_RAW")
 
 TITLE=$(echo "$HTML_CONTENT" | sed -nE 's|.*<title>(.*)</title>.*|\1|p')
 

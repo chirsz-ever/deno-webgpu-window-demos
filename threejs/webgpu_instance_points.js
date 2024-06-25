@@ -19,6 +19,10 @@ import { color, InstancedPointsNodeMaterial } from 'three/nodes';
 
 import * as GeometryUtils from 'three/addons/utils/GeometryUtils.js';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js webgpu - points - instanced");
+
 let renderer, scene, camera, camera2, controls, backgroundNode;
 let material;
 let stats;
@@ -27,10 +31,6 @@ let gui;
 // viewport
 let insetWidth;
 let insetHeight;
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - points - instanced");
 
 init();
 

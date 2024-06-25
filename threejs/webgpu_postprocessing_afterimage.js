@@ -1,4 +1,4 @@
-// https://github.com/mrdoob/three.js/blob/r164/examples/webgpu_postprocessing_afterimage.html
+// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_postprocessing_afterimage.html
 
 import * as THREE from 'three';
 
@@ -8,6 +8,10 @@ import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 import PostProcessing from 'three/addons/renderers/common/PostProcessing.js';
 import { pass } from 'three/nodes';
 
+/* POLYFILL */
+import * as polyfill from "./polyfill.ts";
+await polyfill.init("three.js webgpu - postprocessing - afterimage");
+
 let camera, scene, renderer;
 let mesh, postProcessing, combinedPass;
 
@@ -16,10 +20,6 @@ const params = {
 	damp: 0.96
 
 };
-
-/* POLYFILL */
-import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - postprocessing - afterimage");
 
 init();
 createGUI();
