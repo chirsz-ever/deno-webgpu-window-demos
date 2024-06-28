@@ -192,14 +192,23 @@ export async function runWindowEventLoop() {
             setMouseEventXY(evt, lastMoveMouseEvent!.x, lastMoveMouseEvent!.y);
             canvasDomMock.dispatchEvent(evt);
         }
-        // else if (event.type === EventType.WindowEvent) {
-        //     switch (event.event) {
-        //         case 5: // SDL_WINDOWEVENT_RESIZED
-        //             console.info("resized!")
-        //             onWindowResize(event.data1, event.data2)
-        //             continue;
-        //     }
-        // }
+        else if (event.type === EventType.WindowEvent) {
+            switch (event.event) {
+                // SDL_WINDOWEVENT_SIZE_CHANGED
+                case 6: {
+                    // console.info(`resize(${event.data1}, ${event.data2})`);
+                    const new_width = event.data1;
+                    const new_height = event.data2;
+                    (window as any).innerWidth = new_width;
+                    (window as any).innerHeight = new_height;
+                    contextMock._resize(new_width, new_height);
+
+                    requestAnimationFrameCallbacks.unshift(() => {
+                        (window).dispatchEvent(new Event("resize"));
+                    });
+                }
+            }
+        }
         else if (event.type === EventType.Draw) {
 
             if (VALIDATION)
@@ -432,7 +441,7 @@ export async function init(title: string) {
     const width = WIDTH;
     const height = HEIGHT;
 
-    win = new WindowBuilder(title, width, height).build();
+    win = new WindowBuilder(title, width, height).resizable().build();
     surface = win.windowSurface();
 
     canvasDomMock = new CanvasDomMock(surface, width, height);
@@ -472,7 +481,8 @@ class GPUCanvasContextMock implements GPUCanvasContext {
     getCurrentTexture(): GPUTexture {
         // WORKAROUND: context.getCurrentTexture() cannot be invoked twice without present
         // see https://github.com/denoland/deno/issues/24313
-        if (!this.#currentTexture) {
+        if (!this.#currentTexture || this.#currentTexture.width != this.width || this.#currentTexture.height != this.height) {
+            this.#currentTexture?.destroy();
             this.#currentTexture = device.createTexture({
                 format: preferredFormat,
                 size: [this.width, this.height],
@@ -531,6 +541,17 @@ class GPUCanvasContextMock implements GPUCanvasContext {
             });
         }
         return this.#bindGroup;
+    }
+
+    _resize(width: number, height: number) {
+        this.width = width;
+        this.height = height;
+        if (!this.#configuration)
+            return;
+        this.#configuration.width = width;
+        this.#configuration.height = height;
+        contextMock.context.configure(this.#configuration);
+        this.#bindGroup = undefined;
     }
 }
 
