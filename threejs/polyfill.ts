@@ -16,6 +16,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { FileLoader } from 'three';
 
+// for load MaterialX
+import { DOMParser } from "https://esm.sh/linkedom@0.18.4";
+(globalThis as any).DOMParser = DOMParser;
+
 const WIDTH = 1000;
 const HEIGHT = 750;
 
@@ -245,45 +249,69 @@ export async function runWindowEventLoop() {
     }
 }
 
-const BASE_URL = "https://threejs.org/examples/";
+function is_abs(uri: string): boolean {
+    return uri.startsWith("http:") || uri.startsWith("https:");
+}
+
+const THREEJS_RES_BASE_URL = "https://threejs.org/examples/";
+const MATERIALX_RES_BASE_URL = "https://raw.githubusercontent.com/materialx/MaterialX/main/resources/";
 
 async function load_with_cache(uri: string): Promise<ArrayBuffer> {
     // console.log(`loading ${uri}`);
-    const isBlobUri = uri.startsWith("blob:");
-    let relative_uri;
-    let localPath;
-    if (!isBlobUri) {
-        relative_uri = uri.startsWith(BASE_URL) ? uri.slice(BASE_URL.length) : uri;
-        localPath = join(import.meta.dirname!, relative_uri);
-    }
-
-    let data: ArrayBuffer;
-    if (isBlobUri) {
+    if (uri.startsWith("blob:")) {
+        // BLOB URL
         const res = await fetch(uri);
         if (!res.ok) {
             throw new Error(`fetch ${uri} failed: ${res.status}`);
         }
-        data = await res.arrayBuffer();
-    } else if (await fs.exists(localPath!)) {
+        return res.arrayBuffer();
+    } else if (uri.startsWith(THREEJS_RES_BASE_URL) || uri.startsWith(MATERIALX_RES_BASE_URL) || !is_abs(uri)) {
+        // load three.js and MaterialX with cache
+        let localPath;
+        let remotePath;
+        if (uri.startsWith(THREEJS_RES_BASE_URL)) {
+            remotePath = uri;
+            localPath = join(import.meta.dirname!, uri.slice(THREEJS_RES_BASE_URL.length));
+        } else if (uri.startsWith(MATERIALX_RES_BASE_URL)) {
+            remotePath = uri;
+            localPath = join(import.meta.dirname!, "materialx", uri.slice(MATERIALX_RES_BASE_URL.length));
+        } else {
+            remotePath = THREEJS_RES_BASE_URL + uri;
+            localPath = join(import.meta.dirname!, uri);
+        }
+        return load_with_cache_abs(remotePath, localPath);
+    } else if (is_abs(uri)) {
+        // direct fetch
+        console.info(`loading ${uri}`);
+        return (await fetch(uri)).arrayBuffer();
+    } else {
+        throw new Error(`unknow type of uri: ${uri}`);
+    }
+}
+
+async function load_with_cache_abs(remotePath: string, localPath: string): Promise<ArrayBuffer> {
+
+    let data: ArrayBuffer;
+    if (await fs.exists(localPath)) {
         data = (await Deno.readFile(localPath!)).buffer;
     } else {
-        const remotePath = isBlobUri ? uri : BASE_URL + relative_uri;
         const res = await fetch(remotePath);
         if (!res.ok) {
             throw new Error(`fetch ${remotePath} failed: ${res.status}`);
         }
         data = await res.arrayBuffer();
-        await Deno.mkdir(dirname(localPath!), { recursive: true });
-        await Deno.writeFile(localPath!, new Uint8Array(data));
+        await Deno.mkdir(dirname(localPath), { recursive: true });
+        await Deno.writeFile(localPath, new Uint8Array(data));
         console.log(`${remotePath} is cached to ${localPath}`);
     }
     return data;
 }
 
 GLTFLoader.prototype.load = async function (uri: string, ...args: any[]) {
-    const full_uri = join(this.path, uri);
+    const full_uri = this.path + uri;
     const model_data = await load_with_cache(full_uri);
-    this.parse(model_data, dirname(BASE_URL + full_uri) + "/", ...args);
+    const abs_uri = is_abs(uri) ? full_uri : dirname(THREEJS_RES_BASE_URL + full_uri) + "/";
+    this.parse(model_data, abs_uri, ...args);
 };
 
 const decoder = new TextDecoder();
@@ -295,7 +323,7 @@ FontLoader.prototype.load = async function (uri: string, onLoad: any) {
 };
 
 FileLoader.prototype.load = async function (uri: string, onLoad: any) {
-    const full_uri = this.path ? join(this.path, uri) : uri;
+    const full_uri = this.path + uri;
     const data = await load_with_cache(full_uri);
 
     if (onLoad) {
@@ -335,23 +363,8 @@ class Image extends EventTarget {
 
     set src(uri: string) {
         // console.log(`loading ${uri}`);
-        const cachePath = join(import.meta.dirname!, uri);
-        const localPath = cachePath;
-        const remotePath = new URL(uri, "https://threejs.org/examples/");
         (async () => {
-            let data: ArrayBuffer;
-            if (await fs.exists(localPath)) {
-                data = (await Deno.readFile(localPath)).buffer;
-            } else {
-                const res = await fetch(remotePath);
-                if (!res.ok) {
-                    throw new Error(`fetch ${remotePath} failed: ${res.status}`);
-                }
-                data = await res.arrayBuffer();
-                await Deno.mkdir(dirname(cachePath), { recursive: true });
-                await Deno.writeFile(cachePath, new Uint8Array(data));
-                console.log(`${remotePath} is cached to ${cachePath}`);
-            }
+            const data = await load_with_cache(uri);
             const imageData = await loadImageData(data);
             this.width = imageData.width;
             this.height = imageData.height;
