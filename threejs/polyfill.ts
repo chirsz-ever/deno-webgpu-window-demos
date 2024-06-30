@@ -230,11 +230,14 @@ export async function runWindowEventLoop() {
                 currentTextureGot = false;
             }
 
-            if (VALIDATION)
+            if (VALIDATION) {
                 device.popErrorScope().then((error) => {
-                    if (error)
-                        console.error(`WebGPU validation error: ${error?.message}`);
+                    if (error) {
+                        console.error(`WebGPU validation error: ${error.message}`);
+                        Deno.exit(1);
+                    }
                 });
+            }
 
             // FIXME: deno_sdl2 UI events would block network events?
             await sleep(0);
