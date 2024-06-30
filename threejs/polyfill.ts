@@ -12,9 +12,6 @@ import {
 } from "deno_sdl2";
 
 import WebGPUBackend from 'three/addons/renderers/webgpu/WebGPUBackend.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FontLoader } from 'three/addons/loaders/FontLoader.js';
-import { FileLoader } from 'three';
 
 // for load MaterialX
 import { DOMParser } from "https://esm.sh/linkedom@0.18.4";
@@ -249,93 +246,99 @@ export async function runWindowEventLoop() {
     }
 }
 
-function is_abs(uri: string): boolean {
-    return uri.startsWith("http:") || uri.startsWith("https:");
-}
+// you can also use `--location` argument, for example
+// `--location https://threejs.org/examples/webgpu_backdrop.html`
+if (!location) {
+    // TODO: support to pass query params from command arguments
+    (window as any).location = {
+        search: ''
+    };
 
-const THREEJS_RES_BASE_URL = "https://threejs.org/examples/";
-const MATERIALX_RES_BASE_URL = "https://raw.githubusercontent.com/materialx/MaterialX/main/resources/";
+    // polyfill `fetch` API to use cache
 
-async function load_with_cache(uri: string): Promise<ArrayBuffer> {
-    // console.log(`loading ${uri}`);
-    if (uri.startsWith("blob:")) {
-        // BLOB URL
-        const res = await fetch(uri);
-        if (!res.ok) {
-            throw new Error(`fetch ${uri} failed: ${res.status}`);
-        }
-        return res.arrayBuffer();
-    } else if (uri.startsWith(THREEJS_RES_BASE_URL) || uri.startsWith(MATERIALX_RES_BASE_URL) || !is_abs(uri)) {
-        // load three.js and MaterialX with cache
-        let localPath;
-        let remotePath;
-        if (uri.startsWith(THREEJS_RES_BASE_URL)) {
-            remotePath = uri;
-            localPath = join(import.meta.dirname!, uri.slice(THREEJS_RES_BASE_URL.length));
-        } else if (uri.startsWith(MATERIALX_RES_BASE_URL)) {
-            remotePath = uri;
-            localPath = join(import.meta.dirname!, "materialx", uri.slice(MATERIALX_RES_BASE_URL.length));
-        } else {
-            remotePath = THREEJS_RES_BASE_URL + uri;
-            localPath = join(import.meta.dirname!, uri);
-        }
-        return load_with_cache_abs(remotePath, localPath);
-    } else if (is_abs(uri)) {
-        // direct fetch
-        console.info(`loading ${uri}`);
-        return (await fetch(uri)).arrayBuffer();
-    } else {
-        throw new Error(`unknow type of uri: ${uri}`);
+    const is_abs = function (uri: string): boolean {
+        return uri.startsWith("http:") || uri.startsWith("https:");
+    };
+
+    const is_cachable_url = function (uri: string): boolean {
+        return uri.startsWith(THREEJS_RES_BASE_URL) || uri.startsWith(MATERIALX_RES_BASE_URL) || !is_abs(uri);
     }
-}
 
-async function load_with_cache_abs(remotePath: string, localPath: string): Promise<ArrayBuffer> {
-
-    let data: ArrayBuffer;
-    if (await fs.exists(localPath)) {
-        data = (await Deno.readFile(localPath!)).buffer;
-    } else {
-        const res = await fetch(remotePath);
-        if (!res.ok) {
-            throw new Error(`fetch ${remotePath} failed: ${res.status}`);
+    const fetch_origin = fetch;
+    globalThis.fetch = async function fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
+        const input_str = input instanceof Request ? input.url : input.toString();
+        if (is_cachable_url(input_str)) {
+            const data = await load_with_cache(input_str);
+            return new Response(data, { status: 200 });
         }
-        data = await res.arrayBuffer();
-        await Deno.mkdir(dirname(localPath), { recursive: true });
-        await Deno.writeFile(localPath, new Uint8Array(data));
-        console.log(`${remotePath} is cached to ${localPath}`);
+        if (!input_str.startsWith("blob:"))
+            console.info(`fetch(${input}) without cache`);
+        return fetch_origin(input, init);
+    };
+
+    class RequestMock extends Request {
+        constructor(input: RequestInfo | URL, init?: RequestInit) {
+            if (typeof input === "string" && !is_abs(input)) {
+                input = new URL(input, THREEJS_RES_BASE_URL);
+            }
+            super(input, init);
+        }
     }
-    return data;
-}
 
-GLTFLoader.prototype.load = async function (uri: string, ...args: any[]) {
-    const full_uri = this.path + uri;
-    const model_data = await load_with_cache(full_uri);
-    const abs_uri = is_abs(uri) ? full_uri : dirname(THREEJS_RES_BASE_URL + full_uri) + "/";
-    this.parse(model_data, abs_uri, ...args);
-};
+    globalThis.Request = RequestMock;
 
-const decoder = new TextDecoder();
+    const THREEJS_RES_BASE_URL = "https://threejs.org/examples/";
+    const MATERIALX_RES_BASE_URL = "https://raw.githubusercontent.com/materialx/MaterialX/main/resources/";
 
-FontLoader.prototype.load = async function (uri: string, onLoad: any) {
-    const font_data = await load_with_cache(uri);
-    const font = this.parse(JSON.parse(decoder.decode(font_data)));
-    onLoad(font);
-};
-
-FileLoader.prototype.load = async function (uri: string, onLoad: any) {
-    const full_uri = this.path + uri;
-    const data = await load_with_cache(full_uri);
-
-    if (onLoad) {
-        let result;
-        if (!this.responseType || this.responseType == 'text') {
-            result = decoder.decode(data);
-        } else if (this.responseType == 'arraybuffer') {
-            result = data;
+    const load_with_cache = async function (uri: string): Promise<ArrayBuffer> {
+        // console.log(`loading ${uri}`);
+        if (uri.startsWith("blob:")) {
+            // BLOB URL
+            const res = await fetch_origin(uri);
+            if (!res.ok) {
+                throw new Error(`fetch ${uri} failed: ${res.status}`);
+            }
+            return res.arrayBuffer();
+        } else if (is_cachable_url(uri)) {
+            // load three.js and MaterialX with cache
+            let localPath;
+            let remotePath;
+            if (uri.startsWith(THREEJS_RES_BASE_URL)) {
+                remotePath = uri;
+                localPath = join(import.meta.dirname!, uri.slice(THREEJS_RES_BASE_URL.length));
+            } else if (uri.startsWith(MATERIALX_RES_BASE_URL)) {
+                remotePath = uri;
+                localPath = join(import.meta.dirname!, "materialx", uri.slice(MATERIALX_RES_BASE_URL.length));
+            } else {
+                remotePath = new URL(uri, THREEJS_RES_BASE_URL).toString();
+                localPath = join(import.meta.dirname!, uri);
+            }
+            return load_with_cache_abs(remotePath, localPath);
+        } else if (is_abs(uri)) {
+            // direct fetch
+            console.info(`fetch ${uri} without cache`);
+            return (await fetch_origin(uri)).arrayBuffer();
         } else {
-            throw new Error(`TODO: support responseType "${this.responseType}"`);
+            throw new Error(`unknow type of uri: ${uri}`);
         }
-        onLoad(result);
+    }
+
+    const load_with_cache_abs = async function (remotePath: string, localPath: string): Promise<ArrayBuffer> {
+
+        let data: ArrayBuffer;
+        if (await fs.exists(localPath)) {
+            data = (await Deno.readFile(localPath!)).buffer;
+        } else {
+            const res = await fetch_origin(remotePath);
+            if (!res.ok) {
+                throw new Error(`fetch ${remotePath} failed: ${res.status}`);
+            }
+            data = await res.arrayBuffer();
+            await Deno.mkdir(dirname(localPath), { recursive: true });
+            await Deno.writeFile(localPath, new Uint8Array(data));
+            console.log(`${remotePath} is cached to ${localPath}`);
+        }
+        return data;
     }
 }
 
@@ -364,7 +367,7 @@ class Image extends EventTarget {
     set src(uri: string) {
         // console.log(`loading ${uri}`);
         (async () => {
-            const data = await load_with_cache(uri);
+            const data = await (await fetch(uri)).arrayBuffer();
             const imageData = await loadImageData(data);
             this.width = imageData.width;
             this.height = imageData.height;
@@ -438,11 +441,6 @@ if (!globalThis.window)
 (window as any).innerHeight = HEIGHT;
 // TODO: Retina Display?
 (window as any).devicePixelRatio = 1;
-// TODO: window.addEventListener
-// TODO: support to pass query params from command arguments
-(window as any).location = {
-    search: ''
-};
 
 // ----- May be fixed/implemented in the future -----
 
