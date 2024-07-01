@@ -265,6 +265,7 @@ if (!location) {
         return uri.startsWith(THREEJS_RES_BASE_URL) || uri.startsWith(MATERIALX_RES_BASE_URL) || !is_abs(uri);
     }
 
+    // FIXME?: use "examples/jsm" built in three.js instead of fetch it form "https://threejs.org/examples/jsm/".
     const fetch_origin = fetch;
     globalThis.fetch = async function fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
         const input_str = input instanceof Request ? input.url : input.toString();
@@ -442,6 +443,17 @@ if (!globalThis.window)
 (window as any).innerHeight = HEIGHT;
 // TODO: Retina Display?
 (window as any).devicePixelRatio = 1;
+
+class WorkerMock extends Worker {
+    constructor(specifier: string | URL, options?: WorkerOptions) {
+        if (!options) {
+            options = { type: "module" };
+        }
+        super(specifier, options);
+    }
+}
+
+globalThis.Worker = WorkerMock;
 
 // ----- May be fixed/implemented in the future -----
 
