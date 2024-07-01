@@ -244,6 +244,7 @@ export async function runWindowEventLoop() {
             await sleep(0);
         }
     }
+    Deno.exit();
 }
 
 // you can also use `--location` argument, for example
