@@ -273,7 +273,7 @@ if (!location) {
             return new Response(data, { status: 200 });
         }
         if (!input_str.startsWith("blob:"))
-            console.info(`fetch(${input}) without cache`);
+            console.info(`fetch(${input_str}) without cache`);
         return fetch_origin(input, init);
     };
 
