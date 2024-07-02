@@ -3,6 +3,9 @@
   "packages": {
     "specifiers": {
       "jsr:@divy/sdl2@0.10.5": "jsr:@divy/sdl2@0.10.5",
+      "npm:@types/node": "npm:@types/node@18.16.19",
+      "npm:gifuct-js": "npm:gifuct-js@2.1.2",
+      "npm:gifuct-js@2.1.2": "npm:gifuct-js@2.1.2",
       "npm:three@0.165.0": "npm:three@0.165.0"
     },
     "jsr": {
@@ -11,6 +14,20 @@
       }
     },
     "npm": {
+      "@types/node@18.16.19": {
+        "integrity": "sha512-IXl7o+R9iti9eBW4Wg2hx1xQDig183jj7YLn8F7udNceyfkbn1ZxmzZXuak20gR40D7pIkIY1kYGx5VIGbaHKA==",
+        "dependencies": {}
+      },
+      "gifuct-js@2.1.2": {
+        "integrity": "sha512-rI2asw77u0mGgwhV3qA+OEgYqaDn5UNqgs+Bx0FGwSpuqfYn+Ir6RQY5ENNQ8SbIiG/m5gVa7CD5RriO4f4Lsg==",
+        "dependencies": {
+          "js-binary-schema-parser": "js-binary-schema-parser@2.0.3"
+        }
+      },
+      "js-binary-schema-parser@2.0.3": {
+        "integrity": "sha512-xezGJmOb4lk/M1ZZLTR/jaBHQ4gG/lqQnJqdIv4721DMggsa1bDVlHXNeHYogaIEHD9vCRv0fcL4hMA+Coarkg==",
+        "dependencies": {}
+      },
       "three@0.165.0": {
         "integrity": "sha512-cc96IlVYGydeceu0e5xq70H8/yoVT/tXBxV/W8A/U6uOq7DXc4/s1Mkmnu6SqoYGhSRWWYFOhVwvq6V0VtbplA==",
         "dependencies": {}

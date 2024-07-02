@@ -3,6 +3,7 @@
 import { join, dirname } from "std/path/mod.ts"
 import * as fs from "std/fs/mod.ts"
 import { getPixels } from "https://deno.land/x/get_pixels@v1.2.2/mod.ts";
+import { parseGIF, decompressFrames } from "npm:gifuct-js@2.1.2"
 
 import {
     EventType,
@@ -428,7 +429,10 @@ let canvasCount = 0;
     },
 
     addEventListener(event: string, _listener: any, _options: any) {
-        console.log(`document.addEventListener("${event}", ...)`)
+        console.log(`document.addEventListener("${event}", ...)`);
+        if (event == "mousemove") {
+            canvasDomMock.addEventListener("pointermove", _listener, _options);
+        }
     },
 
     body: {
@@ -761,10 +765,44 @@ const createImageBitmap_origin = globalThis.createImageBitmap;
     }
 };
 
+function startsWith<T>(arr: ArrayLike<T>, prefix: ArrayLike<T>): boolean {
+    if (arr.length < prefix.length) {
+        return false;
+    }
+    for (let i = 0; i < prefix.length; ++i) {
+        if (arr[i] !== prefix[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function is_png(u8view: Uint8Array) {
+    return startsWith(u8view, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+}
+
+function is_jpeg(u8view: Uint8Array) {
+    return startsWith(u8view, [0xFF, 0xD8, 0xFF]);
+}
+
+function is_gif(u8view: Uint8Array) {
+    return startsWith(u8view, [0x47, 0x49, 0x46]);
+}
+
 async function loadImageData(data: ArrayBuffer): Promise<ImageData> {
-    const { data: image_data, width, height } = await getPixels(data);
-    const imgData = new ImageData(new Uint8ClampedArray(image_data), width, height);
-    return imgData;
+    const u8view = new Uint8Array(data);
+    if (is_png(u8view) || is_jpeg(u8view)) {
+        const { data: image_data, width, height } = await getPixels(data);
+        const imgData = new ImageData(new Uint8ClampedArray(image_data), width, height);
+        return imgData;
+    } else if (is_gif(u8view)) {
+        const gif = parseGIF(data);
+        const frames = decompressFrames(gif, true);
+        const frame0 = frames[0];
+        const imgData = new ImageData(frame0.patch, frame0.dims.width, frame0.dims.height);
+        return imgData;
+    }
+    throw new Error("cannot load image data");
 }
 
 const reIlligalCast = /[ui]32\(\s*([\d.]+)\s*\)/g;
