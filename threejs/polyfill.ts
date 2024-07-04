@@ -13,6 +13,7 @@ import {
 } from "deno_sdl2";
 
 import WebGPUBackend from 'three/addons/renderers/webgpu/WebGPUBackend.js';
+import { GPUFeatureName as gpu_feature_names } from 'three/addons/renderers/webgpu/utils/WebGPUConstants.js';
 
 // for load MaterialX
 import { DOMParser } from "https://esm.sh/linkedom@0.18.4";
@@ -467,7 +468,18 @@ export async function init(title: string) {
         throw new Error(`init WebGPU failed: adapter is ${adapter}`);
     }
 
-    device = await adapter.requestDevice();
+    // feature support
+    const features: GPUFeatureName[] = Object.values(gpu_feature_names);
+    const supportedFeatures: GPUFeatureName[] = [];
+    for (const name of features) {
+        if (adapter.features.has(name)) {
+            supportedFeatures.push(name);
+        }
+    }
+
+    device = await adapter.requestDevice({
+        requiredFeatures: supportedFeatures,
+    });
 
     const width = WIDTH;
     const height = HEIGHT;
