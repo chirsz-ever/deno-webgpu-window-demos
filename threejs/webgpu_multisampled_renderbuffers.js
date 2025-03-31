@@ -1,20 +1,13 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_multisampled_renderbuffers.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_multisampled_renderbuffers.html
 
 import * as THREE from 'three';
-import { texture, MeshBasicNodeMaterial, MeshPhongNodeMaterial } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
+import { texture } from 'three/tsl';
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
-import QuadMesh from 'three/addons/objects/QuadMesh.js';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Multisampled Renderbuffers");
+await polyfill.init("three.js webgpu - multisampled renderbuffers");
 
 let camera, scene, renderer;
 const mouse = new THREE.Vector2();
@@ -58,19 +51,11 @@ function initGUI() {
 
 	const gui = new GUI();
 	gui.add( params, 'samples', 0, 4 ).step( 1 );
-	gui.add( params, 'animated', true );
+	gui.add( params, 'animated' );
 
 }
 
 function init() {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 50 );
 	camera.position.z = 3;
@@ -81,8 +66,8 @@ function init() {
 	// textured mesh
 
 	const geometryBox = new THREE.BoxGeometry( 7, 7, 7, 12, 12, 12 );
-	const materialBox = new MeshPhongNodeMaterial();
-	const materialBoxInner = new MeshPhongNodeMaterial( { color: 0xff0000 } );
+	const materialBox = new THREE.MeshBasicNodeMaterial();
+	const materialBoxInner = new THREE.MeshBasicNodeMaterial( { color: 0xff0000 } );
 
 	materialBox.wireframe = true;
 
@@ -102,7 +87,7 @@ function init() {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( dpr );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
@@ -120,10 +105,10 @@ function init() {
 
 	// modulate the final color based on the mouse position
 
-	const materialFX = new MeshBasicNodeMaterial();
+	const materialFX = new THREE.MeshBasicNodeMaterial();
 	materialFX.colorNode = texture( renderTarget.texture ).rgb;
 
-	quadMesh = new QuadMesh( materialFX );
+	quadMesh = new THREE.QuadMesh( materialFX );
 
 }
 

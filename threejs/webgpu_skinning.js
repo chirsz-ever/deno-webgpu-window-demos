@@ -1,18 +1,13 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_skinning.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_skinning.html
 
 import * as THREE from 'three';
-import { toneMapping, color, viewportTopLeft } from 'three/nodes';
+import { color, screenUV } from 'three/tsl';
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Skinning");
+await polyfill.init("three.js webgpu - skinning");
 
 let camera, scene, renderer;
 
@@ -22,19 +17,11 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 100 );
 	camera.position.set( 1, 2, 3 );
 
 	scene = new THREE.Scene();
-	scene.backgroundNode = viewportTopLeft.y.mix( color( 0x66bbff ), color( 0x4466ff ) );
+	scene.backgroundNode = screenUV.y.mix( color( 0x66bbff ), color( 0x4466ff ) );
 	camera.lookAt( 0, 1, 0 );
 
 	clock = new THREE.Clock();
@@ -64,11 +51,12 @@ function init() {
 
 	//renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
-	renderer.toneMappingNode = toneMapping( THREE.LinearToneMapping, .4 );
+	renderer.toneMapping = THREE.LinearToneMapping;
+	renderer.toneMappingExposure = 0.4;
 	document.body.appendChild( renderer.domElement );
 
 	window.addEventListener( 'resize', onWindowResize );

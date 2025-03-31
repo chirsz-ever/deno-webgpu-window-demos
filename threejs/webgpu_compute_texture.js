@@ -1,11 +1,9 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_compute_texture.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_compute_texture.html
 
 import * as THREE from 'three';
-import { texture, textureStore, tslFn, instanceIndex, float, uvec2, vec4, MeshBasicNodeMaterial } from 'three/nodes';
+import { texture, textureStore, Fn, instanceIndex, float, uvec2, vec4 } from 'three/tsl';
 
 import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-import StorageTexture from 'three/addons/renderers/common/StorageTexture.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
@@ -36,14 +34,14 @@ function init() {
 
 	const width = 512, height = 512;
 
-	const storageTexture = new StorageTexture( width, height );
+	const storageTexture = new THREE.StorageTexture( width, height );
 	//storageTexture.minFilter = THREE.LinearMipMapLinearFilter;
 
 	// create function
 
-	const computeTexture = tslFn( ( { storageTexture } ) => {
+	const computeTexture = Fn( ( { storageTexture } ) => {
 
-		const posX = instanceIndex.remainder( width );
+		const posX = instanceIndex.mod( width );
 		const posY = instanceIndex.div( width );
 		const indexUV = uvec2( posX, posY );
 
@@ -62,7 +60,7 @@ function init() {
 		const g = v.add( Math.PI ).sin();
 		const b = v.add( Math.PI ).sub( 0.5 ).sin();
 
-		textureStore( storageTexture, indexUV, vec4( r, g, b, 1 ) );
+		textureStore( storageTexture, indexUV, vec4( r, g, b, 1 ) ).toWriteOnly();
 
 	} );
 
@@ -70,19 +68,19 @@ function init() {
 
 	const computeNode = computeTexture( { storageTexture } ).compute( width * height );
 
-	const material = new MeshBasicNodeMaterial( { color: 0x00ff00 } );
+	const material = new THREE.MeshBasicNodeMaterial( { color: 0x00ff00 } );
 	material.colorNode = texture( storageTexture );
 
 	const plane = new THREE.Mesh( new THREE.PlaneGeometry( 1, 1 ), material );
 	scene.add( plane );
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.body.appendChild( renderer.domElement );
 
 	// compute texture
-	renderer.compute( computeNode );
+	renderer.computeAsync( computeNode );
 
 	window.addEventListener( 'resize', onWindowResize );
 

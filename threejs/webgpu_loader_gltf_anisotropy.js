@@ -1,4 +1,4 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_loader_gltf_anisotropy.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_loader_gltf_anisotropy.html
 
 import * as THREE from 'three';
 
@@ -6,11 +6,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - GLTFloader + Anisotropy");
+await polyfill.init("three.js webgpu - glTF + anisotropy");
 
 let renderer, scene, camera, controls;
 
@@ -18,7 +16,7 @@ init();
 
 async function init() {
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( render );

@@ -1,24 +1,18 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_multiple_rendertargets_readback.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_multiple_rendertargets_readback.html
 
 import * as THREE from 'three';
+import { mix, step, texture, screenUV, mrt, output, transformedNormalWorld, uv, vec2 } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-
-import { MeshBasicNodeMaterial, NodeMaterial, mix, modelNormalMatrix, normalGeometry, normalize, outputStruct, step, texture, uniform, uv, varying, vec2, vec4 } from 'three/nodes';
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
-import QuadMesh from 'three/addons/objects/QuadMesh.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js webgpu - mrt readback");
 
 let camera, scene, renderer, torus;
-let quadMesh, renderTarget, readbackTarget, material, readbackMaterial, pixelBuffer, pixelBufferTexture;
+let quadMesh, sceneMRT, renderTarget, readbackTarget, material, readbackMaterial, pixelBuffer, pixelBufferTexture;
 
 const gui = new GUI();
 
@@ -28,67 +22,11 @@ const options = {
 
 gui.add( options, 'selection', [ 'mrt', 'diffuse', 'normal' ] );
 
-class WriteGBufferMaterial extends NodeMaterial {
-
-	constructor( diffuseTexture ) {
-
-		super();
-
-		this.lights = false;
-		this.fog = false;
-		this.colorSpaced = false;
-
-		this.diffuseTexture = diffuseTexture;
-
-		const vUv = varying( uv() );
-
-		const transformedNormal = modelNormalMatrix.mul( normalGeometry );
-		const vNormal = varying( normalize( transformedNormal ) );
-
-		const repeat = uniform( vec2( 5, 0.5 ) );
-
-		const gColor = texture( this.diffuseTexture, vUv.mul( repeat ) );
-		const gNormal = vec4( normalize( vNormal ), 1.0 );
-
-		this.fragmentNode = outputStruct( gColor, gNormal );
-
-	}
-
-}
-
-class ReadGBufferMaterial extends NodeMaterial {
-
-	constructor( tDiffuse, tNormal ) {
-
-		super();
-
-		this.lights = false;
-		this.fog = false;
-
-		const vUv = varying( uv() );
-
-		const diffuse = texture( tDiffuse, vUv );
-		const normal = texture( tNormal, vUv );
-
-		this.fragmentNode = mix( diffuse, normal, step( 0.5, vUv.x ) );
-
-	}
-
-}
-
 init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( render );
@@ -104,9 +42,8 @@ function init() {
 
 	// Name our G-Buffer attachments for debugging
 
-	renderTarget.textures[ 0 ].name = 'diffuse';
+	renderTarget.textures[ 0 ].name = 'output';
 	renderTarget.textures[ 1 ].name = 'normal';
-
 
 	// Init readback render target, readback data texture, readback material
 	// Be careful with the size! 512 is already big. Reading data back from the GPU is computationally intensive
@@ -120,18 +57,23 @@ function init() {
 	pixelBufferTexture.type = THREE.UnsignedByteType;
 	pixelBufferTexture.format = THREE.RGBAFormat;
 
-	readbackMaterial = new MeshBasicNodeMaterial();
+	readbackMaterial = new THREE.MeshBasicNodeMaterial();
 	readbackMaterial.colorNode = texture( pixelBufferTexture );
 
+	// MRT
 
-	// Scene setup
+	sceneMRT = mrt( {
+		'output': output,
+		'normal': transformedNormalWorld
+	} );
+
+	// Scene
 
 	scene = new THREE.Scene();
 	scene.background = new THREE.Color( 0x222222 );
 
 	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 50 );
 	camera.position.z = 4;
-
 
 	const loader = new THREE.TextureLoader();
 
@@ -140,16 +82,18 @@ function init() {
 	diffuse.wrapS = THREE.RepeatWrapping;
 	diffuse.wrapT = THREE.RepeatWrapping;
 
-	torus = new THREE.Mesh(
-		new THREE.TorusKnotGeometry( 1, 0.3, 128, 32 ),
-		new WriteGBufferMaterial( diffuse )
-	);
+	const torusMaterial = new THREE.NodeMaterial();
+	torusMaterial.colorNode = texture( diffuse, uv().mul( vec2( 10, 4 ) ) );
 
+	torus = new THREE.Mesh( new THREE.TorusKnotGeometry( 1, 0.3, 128, 32 ), torusMaterial );
 	scene.add( torus );
 
+	// Output
 
-	material = new ReadGBufferMaterial( renderTarget.textures[ 0 ], renderTarget.textures[ 1 ] );
-	quadMesh = new QuadMesh( material );
+	material = new THREE.NodeMaterial();
+	material.colorNode = mix( texture( renderTarget.textures[ 0 ] ), texture( renderTarget.textures[ 1 ] ), step( 0.5, screenUV.x ) );
+
+	quadMesh = new THREE.QuadMesh( material );
 
 	// Controls
 
@@ -177,14 +121,18 @@ async function render( time ) {
 
 	torus.rotation.y = ( time / 1000 ) * .4;
 
+	const isMRT = selection === 'mrt';
+
 	// render scene into target
-	renderer.setRenderTarget( selection === 'mrt' ? renderTarget : readbackTarget );
+	renderer.setMRT( isMRT ? sceneMRT : null );
+	renderer.setRenderTarget( isMRT ? renderTarget : readbackTarget );
 	renderer.render( scene, camera );
 
 	// render post FX
+	renderer.setMRT( null );
 	renderer.setRenderTarget( null );
 
-	if ( selection === 'mrt' ) {
+	if ( isMRT ) {
 
 		quadMesh.material = material;
 

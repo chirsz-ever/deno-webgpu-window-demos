@@ -1,19 +1,14 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_skinning_instancing.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_skinning_instancing.html
 
 import * as THREE from 'three';
-import { pass, mix, range, color, oscSine, timerLocal, MeshStandardNodeMaterial } from 'three/nodes';
+import { pass, mix, range, color, oscSine, time } from 'three/tsl';
+import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-import PostProcessing from 'three/addons/renderers/common/PostProcessing.js';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Skinning Instancing");
+await polyfill.init("three.js webgpu - skinning instancing");
 
 let camera, scene, renderer;
 let postProcessing;
@@ -23,14 +18,6 @@ let mixer, clock;
 init();
 
 function init() {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 40 );
 	camera.position.set( 1, 2, 3 );
@@ -76,7 +63,7 @@ function init() {
 
 			if ( child.isMesh ) {
 
-				const oscNode = oscSine( timerLocal( .1 ) );
+				const oscNode = oscSine( time.mul( .1 ) );
 
 				// random colors between instances from 0x000000 to 0xFFFFFF
 				const randomColors = range( new THREE.Color( 0x000000 ), new THREE.Color( 0xFFFFFF ) );
@@ -84,7 +71,7 @@ function init() {
 				// random [ 0, 1 ] values between instances
 				const randomMetalness = range( 0, 1 );
 
-				child.material = new MeshStandardNodeMaterial();
+				child.material = new THREE.MeshStandardNodeMaterial();
 				child.material.roughness = .1;
 				child.material.metalnessNode = mix( 0.0, randomMetalness, oscNode );
 				child.material.colorNode = mix( color( 0xFFFFFF ), randomColors, oscNode );
@@ -114,23 +101,22 @@ function init() {
 
 	// renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
 	document.body.appendChild( renderer.domElement );
 
-	// post processing ( just for WebGPUBackend for now )
-
+	// post processing
 
 	const scenePass = pass( scene, camera );
 	const scenePassColor = scenePass.getTextureNode();
-	const scenePassDepth = scenePass.getDepthNode().remapClamp( .15, .3 );
+	const scenePassDepth = scenePass.getLinearDepthNode().remapClamp( .15, .3 );
 
-	const scenePassColorBlurred = scenePassColor.gaussianBlur();
+	const scenePassColorBlurred = gaussianBlur( scenePassColor );
 	scenePassColorBlurred.directionNode = scenePassDepth;
 
-	postProcessing = new PostProcessing( renderer );
+	postProcessing = new THREE.PostProcessing( renderer );
 	postProcessing.outputNode = scenePassColorBlurred;
 
 
@@ -155,8 +141,6 @@ function animate() {
 
 	if ( mixer ) mixer.update( delta );
 
-
 	postProcessing.render();
-
 
 }

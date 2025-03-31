@@ -1,4 +1,4 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_loader_gltf_compressed.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_loader_gltf_compressed.html
 
 import * as THREE from 'three';
 
@@ -8,11 +8,9 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - GLTFloader + compressed");
+await polyfill.init("three.js webgpu - glTF + compressed");
 
 let camera, scene, renderer;
 
@@ -35,7 +33,7 @@ async function init() {
 
 	//renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );

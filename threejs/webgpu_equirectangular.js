@@ -1,13 +1,9 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_equirectangular.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_equirectangular.html
 
 import * as THREE from 'three';
-import { texture, equirectUV } from 'three/nodes';
+import { texture, equirectUV } from 'three/tsl';
+
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -22,14 +18,6 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	const container = document.createElement( 'div' );
 	document.body.appendChild( container );
 
@@ -37,11 +25,12 @@ function init() {
 	camera.position.set( 1, 0, 0 );
 
 	const equirectTexture = new THREE.TextureLoader().load( 'textures/2294472375_24a3b8ef46_o.jpg' );
+	equirectTexture.colorSpace = THREE.SRGBColorSpace;
 
 	scene = new THREE.Scene();
 	scene.backgroundNode = texture( equirectTexture, equirectUV(), 0 );
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( render );

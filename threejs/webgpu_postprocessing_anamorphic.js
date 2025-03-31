@@ -1,14 +1,8 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_postprocessing_anamorphic.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_postprocessing_anamorphic.html
 
 import * as THREE from 'three';
-import { pass, cubeTexture, viewportTopLeft, uniform } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
-import PostProcessing from 'three/addons/renderers/common/PostProcessing.js';
+import { pass, cubeTexture, screenUV, grayscale, uniform } from 'three/tsl';
+import { anamorphic } from 'three/addons/tsl/display/AnamorphicNode.js';
 
 import { RGBMLoader } from 'three/addons/loaders/RGBMLoader.js';
 
@@ -28,14 +22,6 @@ init();
 
 async function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	const container = document.createElement( 'div' );
 	document.body.appendChild( container );
 
@@ -51,7 +37,7 @@ async function init() {
 		.loadCubemapAsync( rgbmUrls );
 
 	scene.environment = cube1Texture;
-	scene.backgroundNode = cubeTexture( cube1Texture ).mul( viewportTopLeft.distance( .5 ).oneMinus().remapClamp( .1, 4 ) ).saturation( 0 );
+	scene.backgroundNode = grayscale( cubeTexture( cube1Texture ).mul( screenUV.distance( .5 ).oneMinus().remapClamp( .1, 4 ) ) );
 
 	const loader = new GLTFLoader().setPath( 'models/gltf/DamagedHelmet/glTF/' );
 	loader.load( 'DamagedHelmet.gltf', function ( gltf ) {
@@ -60,7 +46,7 @@ async function init() {
 
 	} );
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
@@ -82,10 +68,10 @@ async function init() {
 	const intensity = uniform( 1 );
 	const samples = 64;
 
-	const anamorphicPass = scenePass.getTextureNode().anamorphic( threshold, scaleNode, samples );
+	const anamorphicPass = anamorphic( scenePass.getTextureNode(), threshold, scaleNode, samples );
 	anamorphicPass.resolution = new THREE.Vector2( .2, .2 ); // 1 = full resolution
 
-	postProcessing = new PostProcessing( renderer );
+	postProcessing = new THREE.PostProcessing( renderer );
 	postProcessing.outputNode = scenePass.add( anamorphicPass.mul( intensity ) );
 	//postProcessing.outputNode = scenePass.add( anamorphicPass.getTextureNode().gaussianBlur() );
 

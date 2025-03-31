@@ -1,20 +1,15 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_lights_custom.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_lights_custom.html
 
 import * as THREE from 'three';
-import { color, lights, toneMapping, MeshStandardNodeMaterial, PointsNodeMaterial, LightingModel } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { color, lights } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Custom Lighting Model");
+await polyfill.init("three.js webgpu - custom lighting model");
 
-class CustomLightingModel extends LightingModel {
+class CustomLightingModel extends THREE.LightingModel {
 
 	direct( { lightColor, reflectedLight }, stack ) {
 
@@ -32,33 +27,24 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10 );
 	camera.position.z = 1.5;
 
 	scene = new THREE.Scene();
-	scene.background = new THREE.Color( 0x222222 );
 
 	// lights
 
-	const sphereGeometry = new THREE.SphereGeometry( 0.01, 16, 8 );
+	const sphereGeometry = new THREE.SphereGeometry( 0.02, 16, 8 );
 
 	const addLight = ( hexColor ) => {
 
-		const material = new MeshStandardNodeMaterial();
+		const material = new THREE.NodeMaterial();
 		material.colorNode = color( hexColor );
 		material.lightsNode = lights(); // ignore scene lights
 
 		const mesh = new THREE.Mesh( sphereGeometry, material );
 
-		const light = new THREE.PointLight( hexColor, 0.1, 0.8 );
+		const light = new THREE.PointLight( hexColor, 0.1, 1 );
 		light.add( mesh );
 
 		scene.add( light );
@@ -79,15 +65,15 @@ function init() {
 
 	const points = [];
 
-	for ( let i = 0; i < 1_000_000; i ++ ) {
+	for ( let i = 0; i < 500_000; i ++ ) {
 
-		const point = new THREE.Vector3().random().subScalar( 0.5 ).multiplyScalar( 2 );
+		const point = new THREE.Vector3().random().subScalar( 0.5 ).multiplyScalar( 3 );
 		points.push( point );
 
 	}
 
 	const geometryPoints = new THREE.BufferGeometry().setFromPoints( points );
-	const materialPoints = new PointsNodeMaterial();
+	const materialPoints = new THREE.PointsNodeMaterial();
 
 	// custom lighting model
 
@@ -103,11 +89,10 @@ function init() {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
-	renderer.toneMappingNode = toneMapping( THREE.NeutralToneMapping, 1 );
 	document.body.appendChild( renderer.domElement );
 
 	// controls
@@ -133,7 +118,7 @@ function onWindowResize() {
 
 function animate() {
 
-	const time = Date.now() * 0.0005;
+	const time = Date.now() * 0.001;
 	const scale = .5;
 
 	light1.position.x = Math.sin( time * 0.7 ) * scale;
@@ -148,7 +133,7 @@ function animate() {
 	light3.position.y = Math.cos( time * 0.3 ) * scale;
 	light3.position.z = Math.sin( time * 0.5 ) * scale;
 
-	scene.rotation.y = time * 0.6;
+	scene.rotation.y = time * 0.1;
 
 	renderer.render( scene, camera );
 

@@ -1,14 +1,10 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_compute_particles_rain.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_compute_particles_rain.html
 
 import * as THREE from 'three';
-import { tslFn, texture, uv, uint, positionWorld, modelWorldMatrix, cameraViewMatrix, timerLocal, timerDelta, cameraProjectionMatrix, vec2, instanceIndex, positionGeometry, storage, MeshBasicNodeMaterial, If } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-import StorageInstancedBufferAttribute from 'three/addons/renderers/common/StorageInstancedBufferAttribute.js';
+import { Fn, texture, uv, uint, instancedArray, positionWorld, billboarding, time, hash, deltaTime, vec2, instanceIndex, positionGeometry, If } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
 import Stats from 'three/addons/libs/stats.module.js';
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
@@ -34,14 +30,6 @@ let collisionBoxPos, collisionBoxPosUI;
 init();
 
 function init() {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	const { innerWidth, innerHeight } = window;
 
@@ -78,34 +66,33 @@ function init() {
 
 	collisionPosRT = new THREE.RenderTarget( 1024, 1024 );
 	collisionPosRT.texture.type = THREE.HalfFloatType;
+	collisionPosRT.texture.magFilter = THREE.NearestFilter;
+	collisionPosRT.texture.minFilter = THREE.NearestFilter;
+	collisionPosRT.texture.generateMipmaps = false;
 
-	collisionPosMaterial = new MeshBasicNodeMaterial();
+	collisionPosMaterial = new THREE.MeshBasicNodeMaterial();
 	collisionPosMaterial.colorNode = positionWorld;
 
 	//
 
-	const createBuffer = ( type = 'vec3' ) => storage( new StorageInstancedBufferAttribute( maxParticleCount, 3 ), type, maxParticleCount );
-
-	const positionBuffer = createBuffer();
-	const velocityBuffer = createBuffer();
-	const ripplePositionBuffer = createBuffer();
-	const rippleTimeBuffer = createBuffer();
+	const positionBuffer = instancedArray( maxParticleCount, 'vec3' );
+	const velocityBuffer = instancedArray( maxParticleCount, 'vec3' );
+	const ripplePositionBuffer = instancedArray( maxParticleCount, 'vec3' );
+	const rippleTimeBuffer = instancedArray( maxParticleCount, 'vec3' );
 
 	// compute
 
-	const timer = timerLocal();
-
 	const randUint = () => uint( Math.random() * 0xFFFFFF );
 
-	const computeInit = tslFn( () => {
+	const computeInit = Fn( () => {
 
 		const position = positionBuffer.element( instanceIndex );
 		const velocity = velocityBuffer.element( instanceIndex );
 		const rippleTime = rippleTimeBuffer.element( instanceIndex );
 
-		const randX = instanceIndex.hash();
-		const randY = instanceIndex.add( randUint() ).hash();
-		const randZ = instanceIndex.add( randUint() ).hash();
+		const randX = hash( instanceIndex );
+		const randY = hash( instanceIndex.add( randUint() ) );
+		const randZ = hash( instanceIndex.add( randUint() ) );
 
 		position.x = randX.mul( 100 ).add( - 50 );
 		position.y = randY.mul( 25 );
@@ -119,7 +106,7 @@ function init() {
 
 	//
 
-	const computeUpdate = tslFn( () => {
+	const computeUpdate = Fn( () => {
 
 		const getCoord = ( pos ) => pos.add( 50 ).div( 100 );
 
@@ -130,7 +117,7 @@ function init() {
 
 		position.addAssign( velocity );
 
-		rippleTime.x = rippleTime.x.add( timerDelta().mul( 4 ) );
+		rippleTime.x = rippleTime.x.add( deltaTime.mul( 4 ) );
 
 		//
 
@@ -157,8 +144,8 @@ function init() {
 
 			// next drops will not fall in the same place
 
-			position.x = instanceIndex.add( timer ).hash().mul( 100 ).add( - 50 );
-			position.z = instanceIndex.add( timer.add( randUint() ) ).hash().mul( 100 ).add( - 50 );
+			position.x = hash( instanceIndex.add( time ) ).mul( 100 ).add( - 50 );
+			position.z = hash( instanceIndex.add( time.add( randUint() ) ) ).mul( 100 ).add( - 50 );
 
 		} );
 
@@ -178,34 +165,9 @@ function init() {
 
 	// rain
 
-	const billboarding = tslFn( () => {
-
-		const particlePosition = positionBuffer.toAttribute();
-
-		const worldMatrix = modelWorldMatrix.toVar();
-		worldMatrix[ 3 ][ 0 ] = particlePosition.x;
-		worldMatrix[ 3 ][ 1 ] = particlePosition.y;
-		worldMatrix[ 3 ][ 2 ] = particlePosition.z;
-
-		const modelViewMatrix = cameraViewMatrix.mul( worldMatrix );
-		modelViewMatrix[ 0 ][ 0 ] = 1;
-		modelViewMatrix[ 0 ][ 1 ] = 0;
-		modelViewMatrix[ 0 ][ 2 ] = 0;
-
-		//modelViewMatrix[ 0 ][ 0 ] = modelWorldMatrix[ 0 ].length();
-		//modelViewMatrix[ 1 ][ 1 ] = modelWorldMatrix[ 1 ].length();
-
-		modelViewMatrix[ 2 ][ 0 ] = 0;
-		modelViewMatrix[ 2 ][ 1 ] = 0;
-		modelViewMatrix[ 2 ][ 2 ] = 1;
-
-		return cameraProjectionMatrix.mul( modelViewMatrix ).mul( positionGeometry );
-
-	} );
-
-	const rainMaterial = new MeshBasicNodeMaterial();
+	const rainMaterial = new THREE.MeshBasicNodeMaterial();
 	rainMaterial.colorNode = uv().distance( vec2( .5, 0 ) ).oneMinus().mul( 3 ).exp().mul( .1 );
-	rainMaterial.vertexNode = billboarding();
+	rainMaterial.vertexNode = billboarding( { position: positionBuffer.toAttribute() } );
 	rainMaterial.opacity = .2;
 	rainMaterial.side = THREE.DoubleSide;
 	rainMaterial.forceSinglePass = true;
@@ -214,7 +176,6 @@ function init() {
 	rainMaterial.transparent = true;
 
 	const rainParticles = new THREE.Mesh( new THREE.PlaneGeometry( .1, 2 ), rainMaterial );
-	rainParticles.isInstancedMesh = true;
 	rainParticles.count = instanceCount;
 	scene.add( rainParticles );
 
@@ -222,7 +183,7 @@ function init() {
 
 	const rippleTime = rippleTimeBuffer.element( instanceIndex ).x;
 
-	const rippleEffect = tslFn( () => {
+	const rippleEffect = Fn( () => {
 
 		const center = uv().add( vec2( - .5 ) ).length().mul( 7 );
 		const distance = rippleTime.sub( center );
@@ -231,7 +192,7 @@ function init() {
 
 	} );
 
-	const rippleMaterial = new MeshBasicNodeMaterial();
+	const rippleMaterial = new THREE.MeshBasicNodeMaterial();
 	rippleMaterial.colorNode = rippleEffect();
 	rippleMaterial.positionNode = positionGeometry.add( ripplePositionBuffer.toAttribute() );
 	rippleMaterial.opacityNode = rippleTime.mul( .3 ).oneMinus().max( 0 ).mul( .5 );
@@ -254,7 +215,6 @@ function init() {
 	const rippleGeometry = BufferGeometryUtils.mergeGeometries( [ surfaceRippleGeometry, xRippleGeometry, zRippleGeometry ] );
 
 	const rippleParticles = new THREE.Mesh( rippleGeometry, rippleMaterial );
-	rippleParticles.isInstancedMesh = true;
 	rippleParticles.count = instanceCount;
 	scene.add( rippleParticles );
 
@@ -300,7 +260,7 @@ function init() {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
@@ -310,7 +270,7 @@ function init() {
 
 	//
 
-	renderer.compute( computeInit );
+	renderer.computeAsync( computeInit );
 
 	//
 

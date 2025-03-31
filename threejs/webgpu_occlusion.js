@@ -1,28 +1,23 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_occlusion.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_occlusion.html
 
 import * as THREE from 'three';
-import { nodeObject, uniform, Node, NodeUpdateType, MeshPhongNodeMaterial } from 'three/nodes';
+import { nodeObject, uniform } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Occlusion");
+await polyfill.init("three.js webgpu - occlusion");
 
 let camera, scene, renderer, controls;
 
-class OcclusionNode extends Node {
+class OcclusionNode extends THREE.Node {
 
 	constructor( testObject, normalColor, occludedColor ) {
 
 		super( 'vec3' );
 
-		this.updateType = NodeUpdateType.OBJECT;
+		this.updateType = THREE.NodeUpdateType.OBJECT;
 
 		this.uniformNode = uniform( new THREE.Color() );
 
@@ -52,14 +47,6 @@ init();
 
 async function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 100 );
 	camera.position.z = 7;
 
@@ -80,10 +67,10 @@ async function init() {
 	const planeGeometry = new THREE.PlaneGeometry( 2, 2 );
 	const sphereGeometry = new THREE.SphereGeometry( 0.5 );
 
-	const plane = new THREE.Mesh( planeGeometry, new MeshPhongNodeMaterial( { color: 0x00ff00 } ) );
-	const sphere = new THREE.Mesh( sphereGeometry, new MeshPhongNodeMaterial( { color: 0xffff00 } ) );
+	const plane = new THREE.Mesh( planeGeometry, new THREE.MeshPhongNodeMaterial( { color: 0x00ff00, side: THREE.DoubleSide } ) );
+	const sphere = new THREE.Mesh( sphereGeometry, new THREE.MeshPhongNodeMaterial( { color: 0xffff00 } ) );
 
-	const instanceUniform = nodeObject( new OcclusionNode( sphere, new THREE.Color( 0x00ff00 ), new THREE.Color( 0x0000ff ) ) );
+	const instanceUniform = nodeObject( new OcclusionNode( sphere, new THREE.Color( 0x0000ff ), new THREE.Color( 0x00ff00 ) ) );
 
 	plane.material.colorNode = instanceUniform;
 
@@ -95,14 +82,9 @@ async function init() {
 
 	// renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-
-	// ensure shaders/pipelines are all complete before rendering
-
-	await renderer.compileAsync( scene, camera );
-
 	renderer.setAnimationLoop( render );
 	document.body.appendChild( renderer.domElement );
 

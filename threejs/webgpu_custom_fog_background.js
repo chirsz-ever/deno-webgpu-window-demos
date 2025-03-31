@@ -1,11 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_custom_fog_background.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_custom_fog_background.html
 
 import * as THREE from 'three';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-import PostProcessing from 'three/addons/renderers/common/PostProcessing.js';
-
-import { pass, color, rangeFog } from 'three/nodes';
+import { pass, color, rangeFogFactor } from 'three/tsl';
 
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
@@ -31,7 +27,7 @@ function init() {
 
 	scene = new THREE.Scene();
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	//renderer.toneMapping = THREE.ACESFilmicToneMapping; // apply tone mapping in post processing
@@ -48,7 +44,7 @@ function init() {
 
 	// get fog factor from scene pass context
 	// equivalent to: scene.fog = new THREE.Fog( 0x0066ff, 2.7, 4 );
-	const fogFactor = rangeFog( null, 2.7, 4 ).context( { getViewZ: () => scenePassViewZ } );
+	const fogFactor = rangeFogFactor( 2.7, 4 ).context( { getViewZ: () => scenePassViewZ } );
 
 	// tone mapping scene pass
 	const scenePassTM = scenePass.toneMapping( THREE.ACESFilmicToneMapping );
@@ -56,7 +52,7 @@ function init() {
 	// mix fog from fog factor and background color
 	const compose = fogFactor.mix( scenePassTM, backgroundColor );
 
-	postProcessing = new PostProcessing( renderer );
+	postProcessing = new THREE.PostProcessing( renderer );
 	postProcessing.outputNode = compose;
 
 	//

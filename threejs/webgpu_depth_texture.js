@@ -1,20 +1,13 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_depth_texture.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_depth_texture.html
 
 import * as THREE from 'three';
-import { texture, MeshBasicNodeMaterial } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
-import QuadMesh from 'three/addons/objects/QuadMesh.js';
+import { texture } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Depth Texture");
+await polyfill.init("three.js webgpu - depth texture");
 
 let camera, scene, controls, renderer;
 
@@ -26,20 +19,12 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 20 );
 	camera.position.z = 4;
 
 	scene = new THREE.Scene();
 	scene.background = new THREE.Color( 0x222222 );
-	scene.overrideMaterial = new MeshBasicNodeMaterial();
+	scene.overrideMaterial = new THREE.MeshBasicNodeMaterial();
 
 	//
 
@@ -67,7 +52,7 @@ function init() {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( dpr );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
@@ -83,10 +68,10 @@ function init() {
 
 	// FX
 
-	const materialFX = new MeshBasicNodeMaterial();
+	const materialFX = new THREE.MeshBasicNodeMaterial();
 	materialFX.colorNode = texture( depthTexture );
 
-	quad = new QuadMesh( materialFX );
+	quad = new THREE.QuadMesh( materialFX );
 
 	//
 

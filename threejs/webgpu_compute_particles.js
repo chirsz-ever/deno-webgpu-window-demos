@@ -1,12 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_compute_particles.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_compute_particles.html
 
 import * as THREE from 'three';
-import { tslFn, uniform, texture, instanceIndex, float, vec3, storage, SpriteNodeMaterial, If } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-import StorageInstancedBufferAttribute from 'three/addons/renderers/common/StorageInstancedBufferAttribute.js';
+import { Fn, uniform, texture, instancedArray, instanceIndex, float, hash, vec3, If } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
@@ -17,7 +12,7 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js - WebGPU - Compute Particles");
 
-const particleCount = 1000000;
+const particleCount = 500000;
 
 const gravity = uniform( - .0098 );
 const bounce = uniform( .8 );
@@ -36,14 +31,6 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	const { innerWidth, innerHeight } = window;
 
 	camera = new THREE.PerspectiveCamera( 50, innerWidth / innerHeight, .1, 1000 );
@@ -58,22 +45,20 @@ function init() {
 
 	//
 
-	const createBuffer = () => storage( new StorageInstancedBufferAttribute( particleCount, 3 ), 'vec3', particleCount );
-
-	const positionBuffer = createBuffer();
-	const velocityBuffer = createBuffer();
-	const colorBuffer = createBuffer();
+	const positionBuffer = instancedArray( particleCount, 'vec3' );
+	const velocityBuffer = instancedArray( particleCount, 'vec3' );
+	const colorBuffer = instancedArray( particleCount, 'vec3' );
 
 	// compute
 
-	const computeInit = tslFn( () => {
+	const computeInit = Fn( () => {
 
 		const position = positionBuffer.element( instanceIndex );
 		const color = colorBuffer.element( instanceIndex );
 
-		const randX = instanceIndex.hash();
-		const randY = instanceIndex.add( 2 ).hash();
-		const randZ = instanceIndex.add( 3 ).hash();
+		const randX = hash( instanceIndex );
+		const randY = hash( instanceIndex.add( 2 ) );
+		const randZ = hash( instanceIndex.add( 3 ) );
 
 		position.x = randX.mul( 100 ).add( - 50 );
 		position.y = 0; // randY.mul( 10 );
@@ -85,7 +70,7 @@ function init() {
 
 	//
 
-	const computeUpdate = tslFn( () => {
+	const computeUpdate = Fn( () => {
 
 		const position = positionBuffer.element( instanceIndex );
 		const velocity = velocityBuffer.element( instanceIndex );
@@ -119,7 +104,7 @@ function init() {
 
 	// create particles
 
-	const particleMaterial = new SpriteNodeMaterial();
+	const particleMaterial = new THREE.SpriteNodeMaterial();
 	particleMaterial.colorNode = textureNode.mul( colorBuffer.element( instanceIndex ) );
 	particleMaterial.positionNode = positionBuffer.toAttribute();
 	particleMaterial.scaleNode = size;
@@ -128,7 +113,6 @@ function init() {
 	particleMaterial.transparent = true;
 
 	const particles = new THREE.Mesh( new THREE.PlaneGeometry( 1, 1 ), particleMaterial );
-	particles.isInstancedMesh = true;
 	particles.count = particleCount;
 	particles.frustumCulled = false;
 	scene.add( particles );
@@ -149,7 +133,7 @@ function init() {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true, trackTimestamp: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true, trackTimestamp: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
@@ -160,11 +144,11 @@ function init() {
 
 	//
 
-	renderer.compute( computeInit );
+	renderer.computeAsync( computeInit );
 
 	// click event
 
-	const computeHit = tslFn( () => {
+	const computeHit = Fn( () => {
 
 		const position = positionBuffer.element( instanceIndex );
 		const velocity = velocityBuffer.element( instanceIndex );
@@ -174,7 +158,7 @@ function init() {
 		const distArea = float( 6 ).sub( dist ).max( 0 );
 
 		const power = distArea.mul( .01 );
-		const relativePower = power.mul( instanceIndex.hash().mul( .5 ).add( .5 ) );
+		const relativePower = power.mul( hash( instanceIndex ).mul( .5 ).add( .5 ) );
 
 		velocity.assign( velocity.add( direction.mul( relativePower ) ) );
 
@@ -201,7 +185,7 @@ function init() {
 
 			// compute
 
-			renderer.compute( computeHit );
+			renderer.computeAsync( computeHit );
 
 		}
 
@@ -210,6 +194,7 @@ function init() {
 	// events
 
 	renderer.domElement.addEventListener( 'pointermove', onMove );
+
 	//
 
 	controls = new OrbitControls( camera, renderer.domElement );
@@ -249,8 +234,10 @@ async function animate() {
 	stats.update();
 
 	await renderer.computeAsync( computeParticles );
+	renderer.resolveTimestampsAsync( THREE.TimestampQuery.COMPUTE );
 
 	await renderer.renderAsync( scene, camera );
+	renderer.resolveTimestampsAsync( THREE.TimestampQuery.RENDER );
 
 	// throttle the logging
 
@@ -260,7 +247,7 @@ async function animate() {
 
 			timestamps.innerHTML = `
 
-				Compute ${renderer.info.compute.computeCalls} pass in ${renderer.info.compute.timestamp.toFixed( 6 )}ms<br>
+				Compute ${renderer.info.compute.frameCalls} pass in ${renderer.info.compute.timestamp.toFixed( 6 )}ms<br>
 				Draw ${renderer.info.render.drawCalls} pass in ${renderer.info.render.timestamp.toFixed( 6 )}ms`;
 
 		}

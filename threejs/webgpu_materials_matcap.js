@@ -1,19 +1,15 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_materials_matcap.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_materials_matcap.html
 
 import * as THREE from 'three';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 
-import { MeshMatcapNodeMaterial } from 'three/nodes';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - materials - matcap");
+await polyfill.init("three.js webgpu - matcap material");
 
 let mesh, renderer, scene, camera;
 
@@ -27,7 +23,7 @@ init();
 function init() {
 
 	// renderer
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.body.appendChild( renderer.domElement );
@@ -67,9 +63,9 @@ function init() {
 		mesh = gltf.scene.children[ 0 ];
 		mesh.position.y = - 0.25;
 
-		mesh.material = new MeshMatcapNodeMaterial( {
+		mesh.material = new THREE.MeshMatcapNodeMaterial( {
 
-			color: new THREE.Color().setHex( API.color ).convertSRGBToLinear(),
+			color: new THREE.Color().setHex( API.color ),
 			matcap: matcap,
 			normalMap: normalmap
 
@@ -86,7 +82,7 @@ function init() {
 		.listen()
 		.onChange( function () {
 
-			mesh.material.color.set( API.color ).convertSRGBToLinear();
+			mesh.material.color.set( API.color );
 			render();
 
 		} );

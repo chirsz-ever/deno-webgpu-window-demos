@@ -1,12 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_cubemap_mix.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_cubemap_mix.html
 
 import * as THREE from 'three';
-import { mix, oscSine, timerLocal, pmremTexture, float, toneMapping } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { mix, oscSine, time, pmremTexture, float } from 'three/tsl';
 
 import { RGBMLoader } from 'three/addons/loaders/RGBMLoader.js';
 
@@ -22,14 +17,6 @@ let camera, scene, renderer;
 init();
 
 async function init() {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	const container = document.createElement( 'div' );
 	document.body.appendChild( container );
@@ -56,7 +43,7 @@ async function init() {
 	cube2Texture.generateMipmaps = true;
 	cube2Texture.minFilter = THREE.LinearMipmapLinearFilter;
 
-	scene.environmentNode = mix( pmremTexture( cube2Texture ), pmremTexture( cube1Texture ), oscSine( timerLocal( .1 ) ) );
+	scene.environmentNode = mix( pmremTexture( cube2Texture ), pmremTexture( cube1Texture ), oscSine( time.mul( .1 ) ) );
 
 	scene.backgroundNode = scene.environmentNode.context( {
 		getTextureLevel: () => float( .5 )
@@ -67,11 +54,11 @@ async function init() {
 
 	scene.add( gltf.scene );
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.toneMappingNode = toneMapping( THREE.LinearToneMapping, 1 );
+	renderer.toneMapping = THREE.LinearToneMapping;
 	renderer.setAnimationLoop( render );
 	container.appendChild( renderer.domElement );
 

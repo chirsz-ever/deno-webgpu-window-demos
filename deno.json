@@ -1,11 +1,13 @@
 {
     "imports": {
-        "three": "npm:three@0.165.0",
-        "deno_sdl2": "jsr:@divy/sdl2@0.10.5",
-        "std/": "https://deno.land/std@0.224.0/",
+        "three": "npm:three@0.175.0/webgpu",
+        "three/webgpu": "npm:three@0.175.0/webgpu",
+        "three/addons": "npm:three@0.175.0/addons",
+        "three/src": "npm:three@0.175.0/src",
+        "three/tsl": "npm:three@0.175.0/tsl",
+        "deno_sdl2": "jsr:@divy/sdl2@0.14.0",
         "three/addons/libs/lil-gui.module.min.js": "./threejs/polyfill/gui.ts",
         "three/addons/libs/stats.module.js": "./threejs/polyfill/stats.ts",
-        "https://deno.land/std/node/buffer.ts": "https://deno.land/std@0.224.0/io/buffer.ts",
         "stats-gl": "./threejs/polyfill/stats.ts"
     },
     "unstable": [

@@ -1,7 +1,7 @@
-// deno-lint-ignore-file no-explicit-any
+// deno-lint-ignore-file no-explicit-any require-await
 
-import { join, dirname } from "std/path/mod.ts"
-import * as fs from "std/fs/mod.ts"
+import { join, dirname } from "jsr:@std/path@1.0"
+import * as fs from "jsr:@std/fs@1.0"
 import { getPixels } from "https://deno.land/x/get_pixels@v1.2.2/mod.ts";
 import { parseGIF, decompressFrames } from "npm:gifuct-js@2.1.2"
 
@@ -12,15 +12,16 @@ import {
     Window,
 } from "deno_sdl2";
 
-import WebGPUBackend from 'three/addons/renderers/webgpu/WebGPUBackend.js';
-import { GPUFeatureName as gpu_feature_names } from 'three/addons/renderers/webgpu/utils/WebGPUConstants.js';
+import { GPUFeatureName as gpu_feature_names } from 'three/src/renderers/webgpu/utils/WebGPUConstants.js';
+
+import { WebGPURenderer } from "three";
 
 // for load MaterialX
-import { DOMParser } from "https://esm.sh/linkedom@0.18.4";
+import { DOMParser } from "npm:linkedom@0.18.4";
 (globalThis as any).DOMParser = DOMParser;
 
-const WIDTH = 1000;
-const HEIGHT = 750;
+const INIT_WIDTH = 1000;
+const INIT_HEIGHT = 750;
 
 class MouseEvent extends Event {
     altKey: boolean = false;
@@ -82,11 +83,11 @@ class CanvasDomMock extends EventTarget {
         return this.width;
     }
 
-    constructor(private canvas: Deno.UnsafeWindowSurface, private width: number, private height: number) {
+    constructor(private width: number, private height: number) {
         super();
     }
 
-    addEventListener(event: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions) {
+    override addEventListener(event: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions) {
         super.addEventListener(event, listener, options);
         // if (!_ignoredEvents.includes(event))
         //     console.info(`canvas.addEventListener("${event}", ...)`)
@@ -101,8 +102,7 @@ class CanvasDomMock extends EventTarget {
         if (name !== "webgpu") {
             throw new Error(`canvas.getContext("${name}") is not supported`)
         }
-        const context = this.canvas.getContext(name);
-        return new GPUCanvasContextMock(context, this.width, this.height);
+        return contextMock;
     }
 
     setPointerCapture() {
@@ -131,12 +131,13 @@ function setMouseEventXY(evt: MouseEvent, x: number, y: number, isMove = false) 
 // FIXME: https://github.com/denoland/deno/issues/23433
 // for this, we had to create the device before anything
 let device: GPUDevice;
-const WebGPUBackend_init_origin = WebGPUBackend.prototype.init;
-WebGPUBackend.prototype.init = function init(renderer: any) {
-    this.parameters.device = device;
-    this.parameters.canvas = canvasDomMock;
-    this.parameters.context = contextMock;
-    return WebGPUBackend_init_origin.call(this, renderer);
+
+// make Three.js always use our mocked objects
+WebGPURenderer.prototype.init = async function init() {
+    this.backend.parameters.device = device;
+    this.backend.parameters.canvas = canvasDomMock;
+    this.backend.parameters.context = contextMock;
+    return Object.getPrototypeOf(WebGPURenderer.prototype).init.call(this);
 }
 
 let win: Window;
@@ -229,7 +230,19 @@ export async function runWindowEventLoop() {
 
             if (currentTextureGot) {
                 contextMock._renderCurrentTexture();
-                surface.present();
+                try {
+                    surface.present();
+                    // I don't exactly know why, but this is needed to make it work.
+                    surface = win.windowSurface(canvasDomMock.clientWidth, canvasDomMock.clientHeight);
+                    contextMock._setContext(surface.getContext("webgpu"));
+                } catch (e) {
+                    if (e instanceof Error) {
+                        console.error(e.stack);
+                    } else {
+                        console.error(e);
+                    }
+                    Deno.exit(1)
+                }
                 currentTextureGot = false;
             }
 
@@ -249,6 +262,11 @@ export async function runWindowEventLoop() {
     Deno.exit();
 }
 
+// window global is not available in Deno 2
+if (typeof globalThis.window === 'undefined') {
+    (globalThis as any).window = new EventTarget();
+}
+
 // you can also use `--location` argument, for example
 // `--location https://threejs.org/examples/webgpu_backdrop.html`
 if (!location) {
@@ -257,7 +275,7 @@ if (!location) {
         search: ''
     };
 
-    // polyfill `fetch` API to use cache
+    // mock `fetch` API to use cache
 
     const is_abs = function (uri: string): boolean {
         return uri.startsWith("http:") || uri.startsWith("https:");
@@ -333,6 +351,7 @@ if (!location) {
         if (await fs.exists(localPath)) {
             data = (await Deno.readFile(localPath!)).buffer;
         } else {
+            console.info(`fetch ${remotePath}`);
             const res = await fetch_origin(remotePath);
             if (!res.ok) {
                 throw new Error(`fetch ${remotePath} failed: ${res.status}`);
@@ -441,11 +460,8 @@ let canvasCount = 0;
     }
 };
 
-// Deno 2.0 would not support window
-if (!globalThis.window)
-    globalThis.window = {} as any;
-(window as any).innerWidth = WIDTH;
-(window as any).innerHeight = HEIGHT;
+(window as any).innerWidth = INIT_WIDTH;
+(window as any).innerHeight = INIT_HEIGHT;
 // TODO: Retina Display?
 (window as any).devicePixelRatio = 1;
 
@@ -481,13 +497,13 @@ export async function init(title: string) {
         requiredFeatures: supportedFeatures,
     });
 
-    const width = WIDTH;
-    const height = HEIGHT;
+    const width = INIT_WIDTH;
+    const height = INIT_HEIGHT;
 
     win = new WindowBuilder(title, width, height).resizable().build();
-    surface = win.windowSurface();
+    surface = win.windowSurface(width, height);
 
-    canvasDomMock = new CanvasDomMock(surface, width, height);
+    canvasDomMock = new CanvasDomMock(width, height);
 
     // FIXME: three.js getContext would get error.
     const context = surface.getContext("webgpu");
@@ -509,9 +525,6 @@ class GPUCanvasContextMock implements GPUCanvasContext {
     #currentTexture?: GPUTexture;
 
     configure(configuration: GPUCanvasConfiguration): undefined {
-        // FIXME: https://github.com/denoland/deno/issues/23508
-        configuration.width = this.width;
-        configuration.height = this.height;
         // WORKAROUND: Error: Surface is not configured for presentation
         // see https://github.com/denoland/deno/issues/23509
         if (configuration.alphaMode === "premultiplied") {
@@ -530,6 +543,7 @@ class GPUCanvasContextMock implements GPUCanvasContext {
                 format: preferredFormat,
                 size: [this.width, this.height],
                 usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+                label: '[polyfill currentTexture]',
             })
         }
 
@@ -591,10 +605,12 @@ class GPUCanvasContextMock implements GPUCanvasContext {
         this.height = height;
         if (!this.#configuration)
             return;
-        this.#configuration.width = width;
-        this.#configuration.height = height;
         contextMock.context.configure(this.#configuration);
         this.#bindGroup = undefined;
+    }
+
+    _setContext(context: GPUCanvasContext) {
+        this.context = context;
     }
 }
 
@@ -675,7 +691,7 @@ interface GPUImageCopyExternalImage {
     flipY?: boolean;
 }
 
-interface GPUImageCopyTextureTagged extends GPUImageCopyTexture {
+interface GPUImageCopyTextureTagged extends GPUTexelCopyTextureInfo {
     colorSpace?: PredefinedColorSpace;
     premultipliedAlpha?: boolean;
 }
@@ -742,6 +758,11 @@ interface GPUImageDataLayout {
         rowsPerImage: height,
     }, { width, height });
 };
+
+// https://github.com/denoland/deno/issues/28521
+if (typeof GPUDevice.prototype.lost === 'undefined') {
+    (GPUDevice.prototype as any).lost = new Promise(() => { });
+}
 
 let s_data: symbol;
 

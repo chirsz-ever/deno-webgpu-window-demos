@@ -1,16 +1,11 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_sprites.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_sprites.html
 
 import * as THREE from 'three';
-import { texture, uv, userData, rangeFog, color, SpriteNodeMaterial } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { texture, uv, userData, fog, rangeFogFactor, color } from 'three/tsl';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Sprites");
+await polyfill.init("three.js webgpu - sprites");
 
 let camera, scene, renderer;
 
@@ -24,14 +19,6 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	const width = window.innerWidth;
 	const height = window.innerHeight;
 
@@ -39,7 +26,7 @@ function init() {
 	camera.position.z = 1500;
 
 	scene = new THREE.Scene();
-	scene.fogNode = rangeFog( color( 0x0000ff ), 1500, 2100 );
+	scene.fogNode = fog( color( 0x0000ff ), rangeFogFactor( 1500, 2100 ) );
 
 	// create sprites
 
@@ -59,11 +46,10 @@ function init() {
 
 	const textureNode = texture( map );
 
-	const material = new SpriteNodeMaterial();
+	const material = new THREE.SpriteNodeMaterial();
 	material.colorNode = textureNode.mul( uv() ).mul( 2 ).saturate();
 	material.opacityNode = textureNode.a;
 	material.rotationNode = userData( 'rotation', 'float' ); // get value of: sprite.userData.rotation
-	material.transparent = true;
 
 	for ( let a = 0; a < amount; a ++ ) {
 
@@ -88,7 +74,7 @@ function init() {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( render );

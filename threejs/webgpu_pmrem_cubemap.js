@@ -1,10 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_pmrem_cubemap.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_pmrem_cubemap.html
 
 import * as THREE from 'three';
-
-import { normalWorld, uniform, normalView, positionViewDirection, cameraViewMatrix, pmremTexture, MeshBasicNodeMaterial } from 'three/nodes';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { normalWorld, uniform, normalView, positionViewDirection, cameraViewMatrix, pmremTexture } from 'three/tsl';
 
 import { RGBMLoader } from 'three/addons/loaders/RGBMLoader.js';
 
@@ -32,7 +29,7 @@ async function init() {
 
 	const forceWebGL = false;
 
-	renderer = new WebGPURenderer( { antialias: true, forceWebGL } );
+	renderer = new THREE.WebGPURenderer( { antialias: true, forceWebGL } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -58,7 +55,7 @@ async function init() {
 
 			scene.backgroundNode = pmremTexture( map, normalWorld, pmremRoughness );
 
-			scene.add( new THREE.Mesh( new THREE.SphereGeometry( .5, 64, 64 ), new MeshBasicNodeMaterial( { colorNode: pmremNode } ) ) );
+			scene.add( new THREE.Mesh( new THREE.SphereGeometry( .5, 64, 64 ), new THREE.MeshBasicNodeMaterial( { colorNode: pmremNode } ) ) );
 
 			// gui
 

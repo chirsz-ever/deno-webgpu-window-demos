@@ -1,11 +1,6 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_loader_gltf.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_loader_gltf.html
 
 import * as THREE from 'three';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
@@ -14,7 +9,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - GLTFloader");
+await polyfill.init("three.js webgpu - gltf loader");
 
 let camera, scene, renderer;
 
@@ -22,14 +17,6 @@ init();
 render();
 
 function init() {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	const container = document.createElement( 'div' );
 	document.body.appendChild( container );
@@ -66,7 +53,7 @@ function init() {
 		} );
 
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;

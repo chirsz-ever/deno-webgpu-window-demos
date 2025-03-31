@@ -1,19 +1,15 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_instance_mesh.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_instance_mesh.html
 
 import * as THREE from 'three';
-import { mix, range, normalWorld, oscSine, timerLocal } from 'three/nodes';
+import { mix, range, normalWorld, oscSine, time } from 'three/tsl';
 
 import Stats from 'three/addons/libs/stats.module.js';
+
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Instance Mesh");
+await polyfill.init("three.js webgpu - instance mesh");
 
 let camera, scene, renderer, stats;
 
@@ -26,14 +22,6 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 100 );
 	camera.position.set( amount * 0.9, amount * 0.9, amount * 0.9 );
 	camera.lookAt( 0, 0, 0 );
@@ -45,7 +33,7 @@ function init() {
 	// random colors between instances from 0x000000 to 0xFFFFFF
 	const randomColors = range( new THREE.Color( 0x000000 ), new THREE.Color( 0xFFFFFF ) );
 
-	material.colorNode = mix( normalWorld, randomColors, oscSine( timerLocal( .1 ) ) );
+	material.colorNode = mix( normalWorld, randomColors, oscSine( time.mul( .1 ) ) );
 
 	const loader = new THREE.BufferGeometryLoader();
 	loader.load( 'models/json/suzanne_buffergeometry.json', function ( geometry ) {
@@ -61,13 +49,13 @@ function init() {
 		//
 
 		const gui = new GUI();
-		gui.add( mesh, 'count', 0, count );
+		gui.add( mesh, 'count', 1, count );
 
 	} );
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );

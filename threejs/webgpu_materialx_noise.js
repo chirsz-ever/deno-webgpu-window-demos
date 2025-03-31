@@ -1,21 +1,16 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_materialx_noise.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_materialx_noise.html
 
 import * as THREE from 'three';
-import { MeshPhysicalNodeMaterial, normalWorld, timerLocal, mx_noise_vec3, mx_worley_noise_vec3, mx_cell_noise_float, mx_fractal_noise_vec3 } from 'three/nodes';
+import { normalWorld, time, mx_noise_vec3, mx_worley_noise_vec3, mx_cell_noise_float, mx_fractal_noise_vec3 } from 'three/tsl';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { HDRCubeTextureLoader } from 'three/addons/loaders/HDRCubeTextureLoader.js';
 
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - materials - materialx nodes");
+await polyfill.init("three.js webgpu - materialx noise");
 
 let container, stats;
 
@@ -27,14 +22,6 @@ let group;
 init();
 
 function init() {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	container = document.createElement( 'div' );
 	document.body.appendChild( container );
@@ -54,12 +41,11 @@ function init() {
 
 				const geometry = new THREE.SphereGeometry( 8, 64, 32 );
 
-				const offsetNode = timerLocal();
-				const customUV = normalWorld.mul( 10 ).add( offsetNode );
+				const customUV = normalWorld.mul( 10 ).add( time );
 
 				// left top
 
-				let material = new MeshPhysicalNodeMaterial();
+				let material = new THREE.MeshPhysicalNodeMaterial();
 				material.colorNode = mx_noise_vec3( customUV );
 
 				let mesh = new THREE.Mesh( geometry, material );
@@ -69,7 +55,7 @@ function init() {
 
 				// right top
 
-				material = new MeshPhysicalNodeMaterial();
+				material = new THREE.MeshPhysicalNodeMaterial();
 				material.colorNode = mx_cell_noise_float( customUV );
 
 				mesh = new THREE.Mesh( geometry, material );
@@ -79,7 +65,7 @@ function init() {
 
 				// left bottom
 
-				material = new MeshPhysicalNodeMaterial();
+				material = new THREE.MeshPhysicalNodeMaterial();
 				material.colorNode = mx_worley_noise_vec3( customUV );
 
 				mesh = new THREE.Mesh( geometry, material );
@@ -89,7 +75,7 @@ function init() {
 
 				// right bottom
 
-				material = new MeshPhysicalNodeMaterial();
+				material = new THREE.MeshPhysicalNodeMaterial();
 				material.colorNode = mx_fractal_noise_vec3( customUV.mul( .2 ) );
 
 				mesh = new THREE.Mesh( geometry, material );
@@ -116,7 +102,7 @@ function init() {
 
 	particleLight.add( new THREE.PointLight( 0xffffff, 1000 ) );
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setAnimationLoop( animate );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );

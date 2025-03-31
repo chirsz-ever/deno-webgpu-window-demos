@@ -1,27 +1,27 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_loader_materialx.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_loader_materialx.html
 
 import * as THREE from 'three';
 
 /* POLYFILL */
-import { MaterialXLoader } from 'three/addons/loaders/MaterialXLoader.js';
-/* POLYFILL */
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
 /* POLYFILL */
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 /* POLYFILL */
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+/* POLYFILL */
+import { MaterialXLoader } from 'three/addons/loaders/MaterialXLoader.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - MaterialX loader");
+await polyfill.init("three.js webgpu - materialx loader");
 
 const SAMPLE_PATH = 'https://raw.githubusercontent.com/materialx/MaterialX/main/resources/Materials/Examples/StandardSurface/';
 
 const samples = [
 	'standard_surface_brass_tiled.mtlx',
-	//'standard_surface_brick_procedural.mtlx',
+	'standard_surface_brick_procedural.mtlx',
 	'standard_surface_carpaint.mtlx',
 	//'standard_surface_chess_set.mtlx',
 	'standard_surface_chrome.mtlx',
@@ -30,7 +30,7 @@ const samples = [
 	//'standard_surface_glass.mtlx',
 	//'standard_surface_glass_tinted.mtlx',
 	'standard_surface_gold.mtlx',
-	'standard_surface_greysphere.mtlx',
+	//'standard_surface_greysphere.mtlx',
 	//'standard_surface_greysphere_calibration.mtlx',
 	'standard_surface_jade.mtlx',
 	//'standard_surface_look_brass_tiled.mtlx',
@@ -58,7 +58,7 @@ function init() {
 
 	scene = new THREE.Scene();
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.toneMapping = THREE.LinearToneMapping;

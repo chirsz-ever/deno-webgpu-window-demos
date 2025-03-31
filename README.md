@@ -4,10 +4,10 @@ This repo try to run WeGPU-backended 3D engines on [Deno](https://deno.com), lik
 
 ## How to run
 
-You need install [Deno](https://deno.com) first.
+You need install [Deno](https://deno.com) first. Require Deno 2.2.
 
 Then run the following command to run the "backdrop" demo:
 
 ```sh
-deno run -A threejs/webgpu-backdrop.js
+deno run -A threejs/webgpu_backdrop.js
 ```

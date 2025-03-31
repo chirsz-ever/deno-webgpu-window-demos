@@ -1,20 +1,18 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_materials.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_materials.html
 
 import * as THREE from 'three';
-import * as Nodes from 'three/nodes';
+import * as TSL from 'three/tsl';
 
-import { tslFn, wgslFn, positionLocal, positionWorld, normalLocal, normalWorld, normalView, color, texture, uv, float, vec2, vec3, vec4, oscSine, triplanarTexture, viewportBottomLeft, js, string, global, loop, MeshBasicNodeMaterial, NodeObjectLoader } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { Fn, wgslFn, positionLocal, scriptable, positionWorld, normalLocal, normalWorld, normalView, color, texture, uv, float, vec2, vec3, vec4, oscSine, triplanarTexture, screenUV, js, string, Loop, cameraProjectionMatrix, ScriptableNodeResources } from 'three/tsl';
 
 import { TeapotGeometry } from 'three/addons/geometries/TeapotGeometry.js';
+import WebGPU from 'three/addons/capabilities/WebGPU.js';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Materials");
+await polyfill.init("three.js webgpu - materials");
 
 let stats;
 
@@ -67,48 +65,54 @@ function init() {
 	//
 
 	// PositionLocal
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = positionLocal;
 	materials.push( material );
 
 	// PositionWorld
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = positionWorld;
 	materials.push( material );
 
 	// NormalLocal
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = normalLocal;
 	materials.push( material );
 
 	// NormalWorld
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = normalWorld;
 	materials.push( material );
 
 	// NormalView
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = normalView;
 	materials.push( material );
 
 	// Texture
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = texture( uvTexture );
 	materials.push( material );
 
 	// Opacity
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = color( 0x0099FF );
 	material.opacityNode = texture( uvTexture );
 	material.transparent = true;
 	materials.push( material );
 
 	// AlphaTest
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = texture( uvTexture );
 	material.opacityNode = texture( opacityTexture );
 	material.alphaTestNode = 0.5;
 	materials.push( material );
+
+	// camera
+	material = new THREE.MeshBasicNodeMaterial();
+	material.colorNode = cameraProjectionMatrix.mul( positionLocal );
+	materials.push( material );
+
 
 	// Normal
 	material = new THREE.MeshNormalMaterial();
@@ -122,25 +126,25 @@ function init() {
 
 	// Custom ShaderNode ( desaturate filter )
 
-	const desaturateShaderNode = tslFn( ( input ) => {
+	const desaturateShaderNode = Fn( ( input ) => {
 
 		return vec3( 0.299, 0.587, 0.114 ).dot( input.color.xyz );
 
 	} );
 
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = desaturateShaderNode( { color: texture( uvTexture ) } );
 	materials.push( material );
 
 	// Custom ShaderNode(no inputs) > Approach 2
 
-	const desaturateNoInputsShaderNode = tslFn( () => {
+	const desaturateNoInputsShaderNode = Fn( () => {
 
 		return vec3( 0.299, 0.587, 0.114 ).dot( texture( uvTexture ).xyz );
 
 	} );
 
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = desaturateNoInputsShaderNode();
 	materials.push( material );
 
@@ -166,11 +170,11 @@ function init() {
 		}
 	`, [ desaturateWGSLFn ] );
 
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = someWGSLFn( { color: texture( uvTexture ) } );
 	materials.push( material );
 
-	// Custom WGSL ( get texture from keywords )
+	// Custom WGSL
 
 	const getWGSLTextureSample = wgslFn( `
 		fn getWGSLTextureSample( tex: texture_2d<f32>, tex_sampler: sampler, uv:vec2<f32> ) -> vec4<f32> {
@@ -181,30 +185,29 @@ function init() {
 	` );
 
 	const textureNode = texture( uvTexture );
-	//getWGSLTextureSample.keywords = { tex: textureNode, tex_sampler: sampler( textureNode ) };
 
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = getWGSLTextureSample( { tex: textureNode, tex_sampler: textureNode, uv: uv() } );
 	materials.push( material );
 
 	// Triplanar Texture Mapping
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = triplanarTexture( texture( uvTexture ), null, null, float( .01 ) );
 	materials.push( material );
 
 	// Screen Projection Texture
-	material = new MeshBasicNodeMaterial();
-	material.colorNode = texture( uvTexture, viewportBottomLeft );
+	material = new THREE.MeshBasicNodeMaterial();
+	material.colorNode = texture( uvTexture, screenUV.flipY() );
 	materials.push( material );
 
 	// Loop
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	materials.push( material );
 
 	const loopCount = 10;
-	material.colorNode = loop( loopCount, ( { i } ) => {
+	material.colorNode = Loop( loopCount, ( { i } ) => {
 
-		const output = vec4().temp();
+		const output = vec4().toVar();
 		const scale = oscSine().mul( .09 ); // just a value to test
 
 		const scaleI = scale.mul( i );
@@ -226,10 +229,9 @@ function init() {
 
 	// Scriptable
 
-	global.set( 'THREE', THREE );
-	global.set( 'TSL', Nodes );
+	ScriptableNodeResources.set( 'TSL', TSL );
 
-	const asyncNode = js( `
+	const asyncNode = scriptable( js( `
 
 		layout = {
 			outputType: 'node'
@@ -261,9 +263,9 @@ function init() {
 
 		}
 
-	` ).scriptable();
+	` ) );
 
-	const scriptableNode = js( `
+	const scriptableNode = scriptable( js( `
 
 		layout = {
 			outputType: 'node',
@@ -313,7 +315,7 @@ function init() {
 
 		output = { helloWorld };
 
-	` ).scriptable();
+	` ) );
 
 	scriptableNode.setParameter( 'source', texture( uvTexture ).xyz );
 	scriptableNode.setParameter( 'contrast', asyncNode );
@@ -324,7 +326,7 @@ function init() {
 
 	scriptableNode.call( 'helloWorld' );
 
-	material = new MeshBasicNodeMaterial();
+	material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = scriptableNode;
 	materials.push( material );
 
@@ -346,7 +348,7 @@ function init() {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
@@ -384,10 +386,28 @@ function addMesh( geometry, material ) {
 
 }
 
+function moduleToLib( module ) {
+
+	const lib = {};
+
+	for ( const nodeElement of Object.values( module ) ) {
+
+		if ( typeof nodeElement === 'function' && nodeElement.type !== undefined ) {
+
+			lib[ nodeElement.type ] = nodeElement;
+
+		}
+
+	}
+
+	return lib;
+
+}
+
 function testSerialization( mesh ) {
 
 	const json = mesh.toJSON();
-	const loader = new NodeObjectLoader();
+	const loader = new THREE.NodeObjectLoader().setNodes( moduleToLib( THREE ) ).setNodeMaterials( moduleToLib( THREE ) );
 	const serializedMesh = loader.parse( json );
 
 	serializedMesh.position.x = ( objects.length % 4 ) * 200 - 400;

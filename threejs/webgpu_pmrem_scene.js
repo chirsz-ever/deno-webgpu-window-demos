@@ -1,12 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_pmrem_scene.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_pmrem_scene.html
 
 import * as THREE from 'three';
-
-import { normalWorld, uniform, pmremTexture, MeshBasicNodeMaterial } from 'three/nodes';
-
-import PMREMGenerator from 'three/addons/renderers/common/extras/PMREMGenerator.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { normalWorld, uniform, pmremTexture } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -32,7 +27,7 @@ async function init() {
 
 	const forceWebGL = false;
 
-	renderer = new WebGPURenderer( { antialias: true, forceWebGL } );
+	renderer = new THREE.WebGPURenderer( { antialias: true, forceWebGL } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	container.appendChild( renderer.domElement );
@@ -46,8 +41,9 @@ async function init() {
 	controls.update();
 
 	//
+	const loader = new THREE.CubeTextureLoader().setPath( './textures/cube/Park3Med/' );
 
-	scene.background = new THREE.Color( 0x006699 );
+	scene.background = await loader.loadAsync( [ 'px.jpg', 'nx.jpg', 'py.jpg', 'ny.jpg', 'pz.jpg', 'nz.jpg' ] );
 
 	let model;
 
@@ -77,17 +73,15 @@ async function init() {
 
 	//while ( scene.children.length > 0 ) scene.remove( scene.children[ 0 ] );
 
-	const sceneRT = new PMREMGenerator( renderer ).fromScene( scene );
+	const sceneRT = new THREE.PMREMGenerator( renderer ).fromScene( scene );
 
-	scene.background = null;
-	scene.backgroundNode = null;
 
 	//
 
 	const pmremRoughness = uniform( .5 );
 	const pmremNode = pmremTexture( sceneRT.texture, normalWorld, pmremRoughness );
 
-	scene.add( new THREE.Mesh( new THREE.SphereGeometry( .5, 64, 64 ), new MeshBasicNodeMaterial( { colorNode: pmremNode } ) ) );
+	scene.add( new THREE.Mesh( new THREE.SphereGeometry( .5, 64, 64 ), new THREE.MeshBasicNodeMaterial( { colorNode: pmremNode } ) ) );
 
 	// gui
 

@@ -1,11 +1,10 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_textures_partialupdate.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_textures_partialupdate.html
 
 import * as THREE from 'three';
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgl - texture - webgpu partial update");
+await polyfill.init("three.js webgl - webgpu partial texture update");
 
 let camera, scene, renderer, clock, dataTexture, diffuseMap;
 
@@ -46,7 +45,7 @@ function init() {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true, forceWebGL: false } );
+	renderer = new THREE.WebGPURenderer( { antialias: true, forceWebGL: false } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 

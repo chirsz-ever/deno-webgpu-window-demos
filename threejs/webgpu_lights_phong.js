@@ -1,21 +1,16 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_lights_phong.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_lights_phong.html
 
 import * as THREE from 'three';
-import { color, rangeFog, checker, uv, mix, texture, lights, normalMap, MeshPhongNodeMaterial } from 'three/nodes';
+import { color, fog, rangeFogFactor, checker, uv, mix, texture, lights, normalMap } from 'three/tsl';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TeapotGeometry } from 'three/addons/geometries/TeapotGeometry.js';
 
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Lights Phong");
+await polyfill.init("three.js webgpu - phong lighting model");
 
 let camera, scene, renderer,
 	light1, light2, light3, light4,
@@ -25,19 +20,11 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 100 );
 	camera.position.z = 7;
 
 	scene = new THREE.Scene();
-	scene.fogNode = rangeFog( color( 0xFF00FF ), 12, 30 );
+	scene.fogNode = fog( color( 0xFF00FF ), rangeFogFactor( 12, 30 ) );
 
 	const sphereGeometry = new THREE.SphereGeometry( 0.1, 16, 8 );
 
@@ -57,7 +44,7 @@ function init() {
 
 	const addLight = ( hexColor, power = 1700, distance = 100 ) => {
 
-		const material = new MeshPhongNodeMaterial();
+		const material = new THREE.MeshPhongNodeMaterial();
 		material.colorNode = color( hexColor );
 		material.lights = false;
 
@@ -87,18 +74,18 @@ function init() {
 
 	const geometryTeapot = new TeapotGeometry( .8, 18 );
 
-	const leftObject = new THREE.Mesh( geometryTeapot, new MeshPhongNodeMaterial( { color: 0x555555 } ) );
+	const leftObject = new THREE.Mesh( geometryTeapot, new THREE.MeshPhongNodeMaterial( { color: 0x555555 } ) );
 	leftObject.material.lightsNode = blueLightsNode;
 	leftObject.material.specularNode = texture( alphaTexture );
 	leftObject.position.x = - 3;
 	scene.add( leftObject );
 
-	const centerObject = new THREE.Mesh( geometryTeapot, new MeshPhongNodeMaterial( { color: 0x555555 } ) );
+	const centerObject = new THREE.Mesh( geometryTeapot, new THREE.MeshPhongNodeMaterial( { color: 0x555555 } ) );
 	centerObject.material.normalNode = normalMap( texture( normalMapTexture ) );
 	centerObject.material.shininess = 80;
 	scene.add( centerObject );
 
-	const rightObject = new THREE.Mesh( geometryTeapot, new MeshPhongNodeMaterial( { color: 0x555555 } ) );
+	const rightObject = new THREE.Mesh( geometryTeapot, new THREE.MeshPhongNodeMaterial( { color: 0x555555 } ) );
 	rightObject.material.lightsNode = whiteLightsNode;
 	//rightObject.material.specular.setHex( 0xFF00FF );
 	rightObject.material.specularNode = mix( color( 0x0000FF ), color( 0xFF0000 ), checker( uv().mul( 5 ) ) );
@@ -111,7 +98,7 @@ function init() {
 
 	// renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );

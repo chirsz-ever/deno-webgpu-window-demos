@@ -1,7 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_lights_selective.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_lights_selective.html
 
 import * as THREE from 'three';
-import { rangeFog, color, lights, texture, normalMap, MeshStandardNodeMaterial } from 'three/nodes';
+import { fog, rangeFogFactor, color, lights, texture, normalMap } from 'three/tsl';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
@@ -10,14 +10,9 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TeapotGeometry } from 'three/addons/geometries/TeapotGeometry.js';
 
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Selective Lights");
+await polyfill.init("three.js webgpu - selective lights");
 
 let camera, scene, renderer,
 	light1, light2, light3, light4,
@@ -27,19 +22,11 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 100 );
 	camera.position.z = 7;
 
 	scene = new THREE.Scene();
-	scene.fogNode = rangeFog( color( 0xFF00FF ), 12, 30 );
+	scene.fogNode = fog( color( 0xFF00FF ), rangeFogFactor( 12, 30 ) );
 
 	const sphereGeometry = new THREE.SphereGeometry( 0.1, 16, 8 );
 
@@ -59,7 +46,7 @@ function init() {
 
 	const addLight = ( hexColor, power = 1700, distance = 100 ) => {
 
-		const material = new MeshStandardNodeMaterial();
+		const material = new THREE.MeshStandardNodeMaterial();
 		material.colorNode = color( hexColor );
 		material.lights = false;
 
@@ -89,20 +76,20 @@ function init() {
 
 	const geometryTeapot = new TeapotGeometry( .8, 18 );
 
-	const leftObject = new THREE.Mesh( geometryTeapot, new MeshStandardNodeMaterial( { color: 0x555555 } ) );
+	const leftObject = new THREE.Mesh( geometryTeapot, new THREE.MeshStandardNodeMaterial( { color: 0x555555 } ) );
 	leftObject.material.lightsNode = redLightsNode;
 	leftObject.material.roughnessNode = texture( alphaTexture );
 	leftObject.material.metalness = 0;
 	leftObject.position.x = - 3;
 	scene.add( leftObject );
 
-	const centerObject = new THREE.Mesh( geometryTeapot, new MeshStandardNodeMaterial( { color: 0x555555 } ) );
+	const centerObject = new THREE.Mesh( geometryTeapot, new THREE.MeshStandardNodeMaterial( { color: 0x555555 } ) );
 	centerObject.material.normalNode = normalMap( texture( normalMapTexture ) );
 	centerObject.material.metalness = .5;
 	centerObject.material.roughness = .5;
 	scene.add( centerObject );
 
-	const rightObject = new THREE.Mesh( geometryTeapot, new MeshStandardNodeMaterial( { color: 0x555555 } ) );
+	const rightObject = new THREE.Mesh( geometryTeapot, new THREE.MeshStandardNodeMaterial( { color: 0x555555 } ) );
 	rightObject.material.lightsNode = blueLightsNode;
 	rightObject.material.metalnessNode = texture( alphaTexture );
 	rightObject.position.x = 3;
@@ -113,7 +100,7 @@ function init() {
 
 	//renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );

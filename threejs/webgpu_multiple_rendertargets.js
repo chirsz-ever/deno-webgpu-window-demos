@@ -1,99 +1,22 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_multiple_rendertargets.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_multiple_rendertargets.html
 
 import * as THREE from 'three';
+import { mix, vec2, step, texture, uv, screenUV, normalWorld, output, mrt } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-//import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-
-import { NodeMaterial, mix, modelNormalMatrix, normalGeometry, normalize, outputStruct, step, texture, uniform, uv, varying, vec2, vec4 } from 'three/nodes';
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
-import QuadMesh from 'three/addons/objects/QuadMesh.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - Multiple Render Targets");
+await polyfill.init("three.js webgpu - multiple render targets");
 
 let camera, scene, renderer, torus;
-let quadMesh, renderTarget;
-
-/*
-
-const parameters = {
-	samples: 4,
-	wireframe: false
-};
-
-const gui = new GUI();
-gui.add( parameters, 'samples', 0, 4 ).step( 1 );
-gui.add( parameters, 'wireframe' );
-
-*/
-
-class WriteGBufferMaterial extends NodeMaterial {
-
-	constructor( diffuseTexture ) {
-
-		super();
-
-		this.lights = false;
-		this.fog = false;
-		this.colorSpaced = false;
-
-		this.diffuseTexture = diffuseTexture;
-
-		const vUv = varying( uv() );
-
-		const transformedNormal = modelNormalMatrix.mul( normalGeometry );
-		const vNormal = varying( normalize( transformedNormal ) );
-
-		const repeat = uniform( vec2( 5, 0.5 ) );
-
-		const gColor = texture( this.diffuseTexture, vUv.mul( repeat ) );
-		const gNormal = vec4( normalize( vNormal ), 1.0 );
-
-		this.fragmentNode = outputStruct( gColor, gNormal );
-
-	}
-
-}
-
-class ReadGBufferMaterial extends NodeMaterial {
-
-	constructor( tDiffuse, tNormal ) {
-
-		super();
-
-		this.lights = false;
-		this.fog = false;
-
-		const vUv = varying( uv() );
-
-		const diffuse = texture( tDiffuse, vUv );
-		const normal = texture( tNormal, vUv );
-
-		this.fragmentNode = mix( diffuse, normal, step( 0.5, vUv.x ) );
-
-	}
-
-}
+let postProcessing, renderTarget;
 
 init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( render );
@@ -109,10 +32,10 @@ function init() {
 
 	// Name our G-Buffer attachments for debugging
 
-	renderTarget.textures[ 0 ].name = 'diffuse';
+	renderTarget.textures[ 0 ].name = 'output';
 	renderTarget.textures[ 1 ].name = 'normal';
 
-	// Scene setup
+	// Scene
 
 	scene = new THREE.Scene();
 	scene.background = new THREE.Color( 0x222222 );
@@ -127,16 +50,23 @@ function init() {
 	diffuse.wrapS = THREE.RepeatWrapping;
 	diffuse.wrapT = THREE.RepeatWrapping;
 
-	torus = new THREE.Mesh(
-		new THREE.TorusKnotGeometry( 1, 0.3, 128, 32 ),
-		new WriteGBufferMaterial( diffuse )
-	);
+	const torusMaterial = new THREE.NodeMaterial();
+	torusMaterial.colorNode = texture( diffuse, uv().mul( vec2( 10, 4 ) ) );
 
+	torus = new THREE.Mesh( new THREE.TorusKnotGeometry( 1, 0.3, 128, 32 ), torusMaterial );
 	scene.add( torus );
 
-	// PostProcessing setup
+	// MRT
 
-	quadMesh = new QuadMesh( new ReadGBufferMaterial( renderTarget.textures[ 0 ], renderTarget.textures[ 1 ] ) );
+	renderer.setMRT( mrt( {
+		'output': output,
+		'normal': normalWorld
+	} ) );
+
+	// Post Processing
+
+	postProcessing = new THREE.PostProcessing( renderer );
+	postProcessing.outputNode = mix( texture( renderTarget.textures[ 0 ] ), texture( renderTarget.textures[ 1 ] ), step( 0.5, screenUV.x ) );
 
 	// Controls
 
@@ -160,24 +90,6 @@ function onWindowResize() {
 
 function render( time ) {
 
-	/*
-
-	// Feature not yet working
-
-	renderTarget.samples = parameters.samples;
-
-	scene.traverse( function ( child ) {
-
-		if ( child.material !== undefined ) {
-
-			child.material.wireframe = parameters.wireframe;
-
-		}
-
-	} );
-
-	*/
-
 	torus.rotation.y = ( time / 1000 ) * .4;
 
 	// render scene into target
@@ -186,6 +98,6 @@ function render( time ) {
 
 	// render post FX
 	renderer.setRenderTarget( null );
-	quadMesh.render( renderer );
+	postProcessing.render();
 
 }

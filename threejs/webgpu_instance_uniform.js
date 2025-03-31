@@ -1,12 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_instance_uniform.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_instance_uniform.html
 
 import * as THREE from 'three';
-import { MeshStandardNodeMaterial, NodeUpdateType, Node, nodeObject, uniform, cubeTexture } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { nodeObject, uniform, cubeTexture } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -16,15 +11,15 @@ import Stats from 'three/addons/libs/stats.module.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Instance Uniform");
+await polyfill.init("three.js webgpu - instance uniform");
 
-class InstanceUniformNode extends Node {
+class InstanceUniformNode extends THREE.Node {
 
 	constructor() {
 
 		super( 'vec3' );
 
-		this.updateType = NodeUpdateType.OBJECT;
+		this.updateType = THREE.NodeUpdateType.OBJECT;
 
 		this.uniformNode = uniform( new THREE.Color() );
 
@@ -59,14 +54,6 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	const container = document.createElement( 'div' );
 	document.body.appendChild( container );
 
@@ -98,7 +85,7 @@ function init() {
 	const instanceUniform = nodeObject( new InstanceUniformNode() );
 	const cubeTextureNode = cubeTexture( cTexture );
 
-	const material = new MeshStandardNodeMaterial();
+	const material = new THREE.MeshBasicNodeMaterial();
 	material.colorNode = instanceUniform.add( cubeTextureNode );
 	material.emissiveNode = instanceUniform.mul( cubeTextureNode );
 
@@ -114,7 +101,7 @@ function init() {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );

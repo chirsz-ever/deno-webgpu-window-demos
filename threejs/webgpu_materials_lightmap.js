@@ -1,18 +1,15 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_materials_lightmap.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_materials_lightmap.html
 
 import * as THREE from 'three';
+import { vec4, color, positionLocal, mix } from 'three/tsl';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-import { MeshBasicNodeMaterial, vec4, color, positionLocal, mix } from 'three/nodes';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgl - materials - lightmap");
+await polyfill.init("three.js webgpu - lightmap");
 
 let container, stats;
 let camera, scene, renderer;
@@ -52,7 +49,7 @@ async function init() {
 
 	const h = positionLocal.add( offset ).normalize().y;
 
-	const skyMat = new MeshBasicNodeMaterial();
+	const skyMat = new THREE.MeshBasicNodeMaterial();
 	skyMat.colorNode = vec4( mix( color( bottomColor ), color( topColor ), h.max( 0.0 ).pow( exponent ) ), 1.0 );
 	skyMat.side = THREE.BackSide;
 
@@ -67,7 +64,7 @@ async function init() {
 
 	// RENDERER
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setAnimationLoop( animate );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( innerWidth, innerHeight );

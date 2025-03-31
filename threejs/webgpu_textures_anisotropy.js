@@ -1,14 +1,12 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_textures_anisotropy.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_textures_anisotropy.html
 
 import * as THREE from 'three';
 
 import Stats from 'three/addons/libs/stats.module.js';
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - materials - anisotropic texture filtering");
+await polyfill.init("three.js webgpu - anisotropic texture filtering");
 
 let container, stats;
 
@@ -26,7 +24,7 @@ function init() {
 	container = document.createElement( 'div' );
 	document.body.appendChild( container );
 
-	renderer = new WebGPURenderer( { antialias: true, forceWebGL: false } );
+	renderer = new THREE.WebGPURenderer( { antialias: true, forceWebGL: false } );
 
 	// RENDERER
 
@@ -168,6 +166,6 @@ function render() {
 	renderer.setScissor( SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2 - 2, SCREEN_HEIGHT );
 	renderer.render( scene2, camera );
 
-	// renderer.setScissorTest( false );
+	renderer.setScissorTest( false );
 
 }

@@ -1,16 +1,13 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_sandbox.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_sandbox.html
 
 import * as THREE from 'three';
-import { timerLocal, vec2, uv, texture, mix, checker, normalLocal, positionLocal, color, oscSine, attribute, MeshBasicNodeMaterial, PointsNodeMaterial, LineBasicNodeMaterial } from 'three/nodes';
+import { time, vec2, uv, texture, mix, checker, normalLocal, positionLocal, color, oscSine, attribute } from 'three/tsl';
 
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Sandbox");
+await polyfill.init("three.js webgpu - sandbox");
 
 let camera, scene, renderer;
 
@@ -20,14 +17,6 @@ init();
 
 async function init() {
 
-	if ( WebGPU.isAvailable() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU support' );
-
-	}
-
 	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10 );
 	camera.position.z = 4;
 
@@ -36,7 +25,7 @@ async function init() {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
@@ -63,10 +52,11 @@ async function init() {
 	// box mesh
 
 	const geometryBox = new THREE.BoxGeometry();
-	const materialBox = new MeshBasicNodeMaterial();
+	const materialBox = new THREE.MeshBasicNodeMaterial();
 
 	// birection speed
-	const timerScaleNode = timerLocal().mul( vec2( - 0.5, 0.1 ) );
+
+	const timerScaleNode = time.mul( vec2( - 0.5, 0.1 ) );
 	const animateUV = uv().add( timerScaleNode );
 
 	const textureNode = texture( uvTexture, animateUV );
@@ -84,7 +74,7 @@ async function init() {
 	// displace example
 
 	const geometrySphere = new THREE.SphereGeometry( .5, 64, 64 );
-	const materialSphere = new MeshBasicNodeMaterial();
+	const materialSphere = new THREE.MeshBasicNodeMaterial();
 
 	const displaceY = texture( textureDisplace ).x.mul( 0.25 );
 
@@ -100,7 +90,7 @@ async function init() {
 	// data texture
 
 	const geometryPlane = new THREE.PlaneGeometry();
-	const materialPlane = new MeshBasicNodeMaterial();
+	const materialPlane = new THREE.MeshBasicNodeMaterial();
 	materialPlane.colorNode = texture( createDataTexture() ).add( color( 0x0000FF ) );
 	materialPlane.transparent = true;
 
@@ -110,7 +100,7 @@ async function init() {
 
 	// compressed texture
 
-	const materialCompressed = new MeshBasicNodeMaterial();
+	const materialCompressed = new THREE.MeshBasicNodeMaterial();
 	materialCompressed.colorNode = texture( ktxTexture );
 	materialCompressed.emissiveNode = oscSine().mix( color( 0x663300 ), color( 0x0000FF ) );
 	materialCompressed.alphaTestNode = oscSine();
@@ -133,7 +123,7 @@ async function init() {
 	}
 
 	const geometryPoints = new THREE.BufferGeometry().setFromPoints( points );
-	const materialPoints = new PointsNodeMaterial();
+	const materialPoints = new THREE.PointsNodeMaterial();
 
 	materialPoints.colorNode = positionLocal.mul( 3 );
 
@@ -153,7 +143,7 @@ async function init() {
 
 	geometryLine.setAttribute( 'color', geometryLine.getAttribute( 'position' ) );
 
-	const materialLine = new LineBasicNodeMaterial();
+	const materialLine = new THREE.LineBasicNodeMaterial();
 	materialLine.colorNode = attribute( 'color' );
 
 	const line = new THREE.Line( geometryLine, materialLine );

@@ -1,24 +1,19 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_lines_fat.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_lines_fat.html
 
 import * as THREE from 'three';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { color } from 'three/tsl';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { Line2NodeMaterial, LineDashedNodeMaterial, LineBasicNodeMaterial, color } from 'three/nodes';
-import { Line2 } from 'three/addons/lines/Line2.js';
+import { Line2 } from 'three/addons/lines/webgpu/Line2.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import * as GeometryUtils from 'three/addons/utils/GeometryUtils.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - lines - fat");
+await polyfill.init("three.js webgpu - fat lines");
 
 let line, renderer, scene, camera, camera2, controls, backgroundNode;
 let line1;
@@ -34,15 +29,7 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setClearColor( 0x000000, 0.0 );
 	renderer.setSize( window.innerWidth, window.innerHeight );
@@ -94,9 +81,8 @@ function init() {
 	const geometry = new LineGeometry();
 	geometry.setPositions( positions );
 	geometry.setColors( colors );
-	geometry.instanceCount = positions.length / 3 - 1;
 
-	matLine = new Line2NodeMaterial( {
+	matLine = new THREE.Line2NodeMaterial( {
 
 		color: 0xffffff,
 		linewidth: 5, // in world units with size attenuation, pixels otherwise
@@ -115,8 +101,8 @@ function init() {
 	geo.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
 	geo.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
 
-	matLineBasic = new LineBasicNodeMaterial( { vertexColors: true } );
-	matLineDashed = new LineDashedNodeMaterial( { vertexColors: true, scale: 2, dashSize: 1, gapSize: 1 } );
+	matLineBasic = new THREE.LineBasicNodeMaterial( { vertexColors: true } );
+	matLineDashed = new THREE.LineDashedNodeMaterial( { vertexColors: true, scale: 2, dashSize: 1, gapSize: 1 } );
 
 	line1 = new THREE.Line( geo, matLineBasic );
 	line1.computeLineDistances();
@@ -169,13 +155,15 @@ function animate() {
 
 	// inset scene
 
+	const posY = window.innerHeight - insetHeight - 20;
+
 	renderer.clearDepth(); // important!
 
 	renderer.setScissorTest( true );
 
-	renderer.setScissor( 20, 20, insetWidth, insetHeight );
+	renderer.setScissor( 20, posY, insetWidth, insetHeight );
 
-	renderer.setViewport( 20, 20, insetWidth, insetHeight );
+	renderer.setViewport( 20, posY, insetWidth, insetHeight );
 
 	camera2.position.copy( camera.position );
 	camera2.quaternion.copy( camera.quaternion );

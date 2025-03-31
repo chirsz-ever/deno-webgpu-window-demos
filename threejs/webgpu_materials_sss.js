@@ -1,9 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_materials_sss.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_materials_sss.html
 
-import * as THREE from 'three';
-import * as Nodes from 'three/nodes';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import * as THREE from 'three/webgpu';
+import { texture, uniform, vec3 } from 'three/tsl';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
@@ -53,7 +51,7 @@ function init() {
 	pointLight2.position.y = 20;
 	pointLight2.position.z = - 260;
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
@@ -83,15 +81,15 @@ function initMaterial() {
 	const thicknessTexture = loader.load( 'models/fbx/bunny_thickness.jpg' );
 	imgTexture.wrapS = imgTexture.wrapT = THREE.RepeatWrapping;
 
-	const material = new Nodes.MeshSSSNodeMaterial();
+	const material = new THREE.MeshSSSNodeMaterial();
 	material.color = new THREE.Color( 1.0, 0.2, 0.2 );
 	material.roughness = 0.3;
-	material.thicknessColorNode = Nodes.texture( thicknessTexture ).mul( Nodes.vec3( 0.5, 0.3, 0.0 ) );
-	material.thicknessDistortionNode = Nodes.uniform( 0.1 );
-	material.thicknessAmbientNode = Nodes.uniform( 0.4 );
-	material.thicknessAttenuationNode = Nodes.uniform( 0.8 );
-	material.thicknessPowerNode = Nodes.uniform( 2.0 );
-	material.thicknessScaleNode = Nodes.uniform( 16.0 );
+	material.thicknessColorNode = texture( thicknessTexture ).mul( vec3( 0.5, 0.3, 0.0 ) );
+	material.thicknessDistortionNode = uniform( 0.1 );
+	material.thicknessAmbientNode = uniform( 0.4 );
+	material.thicknessAttenuationNode = uniform( 0.8 );
+	material.thicknessPowerNode = uniform( 2.0 );
+	material.thicknessScaleNode = uniform( 16.0 );
 
 	// LOADER
 

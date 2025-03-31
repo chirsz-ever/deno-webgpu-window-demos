@@ -1,13 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_materials_toon.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_materials_toon.html
 
 import * as THREE from 'three';
-
-import { MeshBasicNodeMaterial, MeshToonNodeMaterial } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { toonOutlinePass } from 'three/tsl';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
@@ -17,11 +11,11 @@ import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - materials - toon");
+await polyfill.init("three.js webgpu - toon material");
 
 let container, stats;
 
-let camera, scene, renderer;
+let camera, scene, renderer, postProcessing;
 let particleLight;
 
 const loader = new FontLoader();
@@ -32,14 +26,6 @@ loader.load( 'fonts/gentilis_regular.typeface.json', function ( font ) {
 } );
 
 function init( font ) {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	container = document.createElement( 'div' );
 	document.body.appendChild( container );
@@ -54,18 +40,25 @@ function init( font ) {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( render );
 	container.appendChild( renderer.domElement );
 
+	//
+
+	postProcessing = new THREE.PostProcessing( renderer );
+
+	postProcessing.outputNode = toonOutlinePass( scene, camera );
+
+
 	// Materials
 
 	const cubeWidth = 400;
-	const numberOfSphersPerSide = 5;
-	const sphereRadius = ( cubeWidth / numberOfSphersPerSide ) * 0.8 * 0.5;
-	const stepSize = 1.0 / numberOfSphersPerSide;
+	const numberOfSpheresPerSide = 5;
+	const sphereRadius = ( cubeWidth / numberOfSpheresPerSide ) * 0.8 * 0.5;
+	const stepSize = 1.0 / numberOfSpheresPerSide;
 
 	const geometry = new THREE.SphereGeometry( sphereRadius, 32, 16 );
 
@@ -89,7 +82,7 @@ function init( font ) {
 				// basic monochromatic energy preservation
 				const diffuseColor = new THREE.Color().setHSL( alpha, 0.5, gamma * 0.5 + 0.1 ).multiplyScalar( 1 - beta * 0.2 );
 
-				const material = new MeshToonNodeMaterial( {
+				const material = new THREE.MeshToonNodeMaterial( {
 					color: diffuseColor,
 					gradientMap: gradientMap
 				} );
@@ -120,7 +113,7 @@ function init( font ) {
 
 		} );
 
-		const textMaterial = new MeshBasicNodeMaterial();
+		const textMaterial = new THREE.MeshBasicNodeMaterial();
 		const textMesh = new THREE.Mesh( textGeo, textMaterial );
 		textMesh.position.copy( location );
 		scene.add( textMesh );
@@ -135,7 +128,7 @@ function init( font ) {
 
 	particleLight = new THREE.Mesh(
 		new THREE.SphereGeometry( 4, 8, 8 ),
-		new MeshBasicNodeMaterial( { color: 0xffffff } )
+		new THREE.MeshBasicNodeMaterial( { color: 0xffffff } )
 	);
 	scene.add( particleLight );
 
@@ -180,7 +173,7 @@ function render() {
 
 	stats.begin();
 
-	renderer.render( scene, camera );
+	postProcessing.render();
 
 	stats.end();
 

@@ -1,18 +1,11 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_rtt.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_rtt.html
 
 import * as THREE from 'three';
-import { texture, uniform, MeshBasicNodeMaterial } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
-import QuadMesh from 'three/addons/objects/QuadMesh.js';
+import { texture, uniform, saturation, hue } from 'three/tsl';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - RTT");
+await polyfill.init("three.js webgpu - rtt");
 
 let camera, scene, renderer;
 const mouse = new THREE.Vector2();
@@ -27,14 +20,6 @@ init();
 
 function init() {
 
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
-
 	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10 );
 	camera.position.z = 3;
 
@@ -47,7 +32,7 @@ function init() {
 	const uvTexture = loader.load( './textures/uv_grid_opengl.jpg' );
 
 	const geometryBox = new THREE.BoxGeometry();
-	const materialBox = new MeshBasicNodeMaterial();
+	const materialBox = new THREE.MeshBasicNodeMaterial();
 	materialBox.colorNode = texture( uvTexture );
 
 	//
@@ -57,7 +42,7 @@ function init() {
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( dpr );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
@@ -74,10 +59,10 @@ function init() {
 
 	const screenFXNode = uniform( mouse );
 
-	const materialFX = new MeshBasicNodeMaterial();
-	materialFX.colorNode = texture( renderTarget.texture ).rgb.saturation( screenFXNode.x.oneMinus() ).hue( screenFXNode.y );
+	const materialFX = new THREE.MeshBasicNodeMaterial();
+	materialFX.colorNode = hue( saturation( texture( renderTarget.texture ).rgb, screenFXNode.x.oneMinus() ), screenFXNode.y );
 
-	quadMesh = new QuadMesh( materialFX );
+	quadMesh = new THREE.QuadMesh( materialFX );
 
 }
 

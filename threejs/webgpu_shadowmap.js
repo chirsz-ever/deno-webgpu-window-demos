@@ -1,14 +1,10 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_shadowmap.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_shadowmap.html
 
 import * as THREE from 'three';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { mx_fractal_noise_vec3, positionWorld, vec4, Fn, color, vertexIndex, hash } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { mx_fractal_noise_vec3, positionWorld, vec4, tslFn, color, vertexIndex, MeshPhongNodeMaterial } from 'three/nodes';
+
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
 await polyfill.init("three.js webgpu - shadow map");
@@ -20,14 +16,6 @@ let torusKnot, dirGroup;
 init();
 
 function init() {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 );
 	camera.position.set( 0, 10, 20 );
@@ -75,7 +63,7 @@ function init() {
 	// geometry
 
 	const geometry = new THREE.TorusKnotGeometry( 25, 8, 75, 80 );
-	const material = new MeshPhongNodeMaterial( {
+	const material = new THREE.MeshPhongNodeMaterial( {
 		color: 0x999999,
 		shininess: 0,
 		specular: 0x222222
@@ -86,9 +74,9 @@ function init() {
 
 	const materialColor = vec4( 1, 0, 1, .5 );
 
-	const discardNode = vertexIndex.hash().greaterThan( 0.5 );
+	const discardNode = hash( vertexIndex ).greaterThan( 0.5 );
 
-	materialCustomShadow.colorNode = tslFn( () => {
+	materialCustomShadow.colorNode = Fn( () => {
 
 		discardNode.discard();
 
@@ -97,7 +85,7 @@ function init() {
 	} )();
 
 
-	materialCustomShadow.shadowNode = tslFn( () => {
+	materialCustomShadow.castShadowNode = Fn( () => {
 
 		discardNode.discard();
 
@@ -137,7 +125,7 @@ function init() {
 		specular: 0x111111
 	} );
 
-	planeMaterial.shadowPositionNode = tslFn( () => {
+	planeMaterial.shadowPositionNode = Fn( () => {
 
 		const pos = positionWorld.toVar();
 		pos.xz.addAssign( mx_fractal_noise_vec3( positionWorld.mul( 2 ) ).saturate().xz );
@@ -146,7 +134,7 @@ function init() {
 	} )();
 
 
-	planeMaterial.colorNode = tslFn( () => {
+	planeMaterial.colorNode = Fn( () => {
 
 		const pos = positionWorld.toVar();
 		pos.xz.addAssign( mx_fractal_noise_vec3( positionWorld.mul( 2 ) ).saturate().xz );
@@ -163,10 +151,11 @@ function init() {
 
 	// renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
+	renderer.shadowMap.enabled = true;
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
 	document.body.appendChild( renderer.domElement );
 

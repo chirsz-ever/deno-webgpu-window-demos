@@ -1,12 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_custom_fog.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_custom_fog.html
 
 import * as THREE from 'three';
-import { color, fog, float, positionWorld, triNoise3D, positionView, normalWorld, uniform, MeshPhongNodeMaterial } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { color, fog, float, positionWorld, triNoise3D, positionView, normalWorld, uniform } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -20,14 +15,6 @@ let controls;
 init();
 
 function init() {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 600 );
 	camera.position.set( 30, 15, 30 );
@@ -63,7 +50,7 @@ function init() {
 	const buildWindows = positionWorld.y.mul( 10 ).floor().mod( 4 ).sign().mix( color( 0x000066 ).add( fogNoiseDistance ), color( 0xffffff ) );
 
 	const buildGeometry = new THREE.BoxGeometry( 1, 1, 1 );
-	const buildMaterial = new MeshPhongNodeMaterial( {
+	const buildMaterial = new THREE.MeshPhongNodeMaterial( {
 		colorNode: buildWindows
 	} );
 
@@ -113,7 +100,7 @@ function init() {
 
 	// renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );

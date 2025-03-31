@@ -1,9 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_mirror.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_mirror.html
 
 import * as THREE from 'three';
-import { MeshPhongNodeMaterial, reflector, uv, texture, color } from 'three/nodes';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { reflector, uv, texture, color } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -93,14 +91,14 @@ function init() {
 
 	//
 
-	const planeBottom = new THREE.Mesh( planeGeo, new MeshPhongNodeMaterial( {
+	const planeBottom = new THREE.Mesh( planeGeo, new THREE.MeshPhongNodeMaterial( {
 		colorNode: groundNode
 	} ) );
 	planeBottom.rotateX( - Math.PI / 2 );
 	planeBottom.add( groundReflector.target );
 	scene.add( planeBottom );
 
-	const planeBack = new THREE.Mesh( planeGeo, new MeshPhongNodeMaterial( {
+	const planeBack = new THREE.Mesh( planeGeo, new THREE.MeshPhongNodeMaterial( {
 		colorNode: verticalNode
 	} ) );
 	planeBack.position.z = - 50;
@@ -153,7 +151,7 @@ function init() {
 
 	// renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );

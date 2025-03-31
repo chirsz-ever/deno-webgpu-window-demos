@@ -1,9 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_parallax_uv.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_parallax_uv.html
 
 import * as THREE from 'three';
-import { MeshStandardNodeMaterial, texture, parallaxUV, uv } from 'three/nodes';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { texture, parallaxUV, blendOverlay, uv } from 'three/tsl';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -61,7 +59,7 @@ async function init() {
 	bottomTexture.wrapS = THREE.RepeatWrapping;
 	bottomTexture.wrapT = THREE.RepeatWrapping;
 
-	// paralax effect
+	// parallax effect
 
 	const parallaxScale = .3;
 	const offsetUV = texture( displaceTexture ).mul( parallaxScale );
@@ -69,11 +67,11 @@ async function init() {
 	const parallaxUVOffset = parallaxUV( uv(), offsetUV );
 	const parallaxResult = texture( bottomTexture, parallaxUVOffset );
 
-	const iceNode = texture( topTexture ).overlay( parallaxResult );
+	const iceNode = blendOverlay( texture( topTexture ), parallaxResult );
 
 	// material
 
-	const material = new MeshStandardNodeMaterial();
+	const material = new THREE.MeshStandardNodeMaterial();
 	material.colorNode = iceNode.mul( 5 ); // increase the color intensity to 5 ( contrast )
 	material.roughnessNode = texture( roughnessTexture );
 	material.normalMap = normalTexture;
@@ -87,7 +85,7 @@ async function init() {
 
 	// renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );

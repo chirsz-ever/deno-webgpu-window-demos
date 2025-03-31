@@ -1,8 +1,6 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_clearcoat.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_clearcoat.html
 
 import * as THREE from 'three';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
@@ -157,7 +155,7 @@ function init() {
 
 	particleLight.add( new THREE.PointLight( 0xffffff, 30 ) );
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );

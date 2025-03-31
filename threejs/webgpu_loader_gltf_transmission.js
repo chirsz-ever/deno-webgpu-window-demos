@@ -1,4 +1,4 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_loader_gltf_transmission.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_loader_gltf_transmission.html
 
 import * as THREE from 'three';
 
@@ -8,11 +8,9 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - GLTFloader + transmission");
+await polyfill.init("three.js webgpu - glTF + transmission");
 
 let camera, scene, renderer, controls, clock, mixer;
 
@@ -57,7 +55,7 @@ function init() {
 
 		} );
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setAnimationLoop( render );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );

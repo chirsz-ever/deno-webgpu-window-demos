@@ -1,16 +1,10 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_compute_particles_snow.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_compute_particles_snow.html
 
 import * as THREE from 'three';
-import { tslFn, texture, vec3, pass, color, uint, viewportTopLeft, positionWorld, positionLocal, timerLocal, vec2, MeshStandardNodeMaterial, instanceIndex, storage, MeshBasicNodeMaterial, If } from 'three/nodes';
+import { Fn, texture, vec3, pass, color, uint, screenUV, instancedArray, positionWorld, positionLocal, time, vec2, hash, instanceIndex, If } from 'three/tsl';
+import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
 
 import { TeapotGeometry } from 'three/addons/geometries/TeapotGeometry.js';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-import StorageInstancedBufferAttribute from 'three/addons/renderers/common/StorageInstancedBufferAttribute.js';
-
-import PostProcessing from 'three/addons/renderers/common/PostProcessing.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -32,14 +26,6 @@ let collisionCamera, collisionPosRT, collisionPosMaterial;
 init();
 
 async function init() {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	const { innerWidth, innerHeight } = window;
 
@@ -77,42 +63,41 @@ async function init() {
 
 	collisionPosRT = new THREE.RenderTarget( 1024, 1024 );
 	collisionPosRT.texture.type = THREE.HalfFloatType;
+	collisionPosRT.texture.magFilter = THREE.NearestFilter;
+	collisionPosRT.texture.minFilter = THREE.NearestFilter;
+	collisionPosRT.texture.generateMipmaps = false;
 
-	collisionPosMaterial = new MeshBasicNodeMaterial();
+	collisionPosMaterial = new THREE.MeshBasicNodeMaterial();
 	collisionPosMaterial.fog = false;
 	collisionPosMaterial.toneMapped = false;
 	collisionPosMaterial.colorNode = positionWorld.y;
 
 	//
 
-	const createBuffer = ( type = 'vec3' ) => storage( new StorageInstancedBufferAttribute( maxParticleCount, type === 'vec4' ? 4 : 3 ), type, maxParticleCount );
-
-	const positionBuffer = createBuffer();
-	const scaleBuffer = createBuffer();
-	const staticPositionBuffer = createBuffer();
-	const dataBuffer = createBuffer( 'vec4' );
+	const positionBuffer = instancedArray( maxParticleCount, 'vec3' );
+	const scaleBuffer = instancedArray( maxParticleCount, 'vec3' );
+	const staticPositionBuffer = instancedArray( maxParticleCount, 'vec3' );
+	const dataBuffer = instancedArray( maxParticleCount, 'vec4' );
 
 	// compute
 
-	const timer = timerLocal();
-
 	const randUint = () => uint( Math.random() * 0xFFFFFF );
 
-	const computeInit = tslFn( () => {
+	const computeInit = Fn( () => {
 
 		const position = positionBuffer.element( instanceIndex );
 		const scale = scaleBuffer.element( instanceIndex );
 		const particleData = dataBuffer.element( instanceIndex );
 
-		const randX = instanceIndex.hash();
-		const randY = instanceIndex.add( randUint() ).hash();
-		const randZ = instanceIndex.add( randUint() ).hash();
+		const randX = hash( instanceIndex );
+		const randY = hash( instanceIndex.add( randUint() ) );
+		const randZ = hash( instanceIndex.add( randUint() ) );
 
 		position.x = randX.mul( 100 ).add( - 50 );
 		position.y = randY.mul( 500 ).add( 3 );
 		position.z = randZ.mul( 100 ).add( - 50 );
 
-		scale.xyz = instanceIndex.add( Math.random() ).hash().mul( .8 ).add( .2 );
+		scale.xyz = hash( instanceIndex.add( Math.random() ) ).mul( .8 ).add( .2 );
 
 		staticPositionBuffer.element( instanceIndex ).assign( vec3( 1000, 10000, 1000 ) );
 
@@ -129,7 +114,7 @@ async function init() {
 	const surfaceOffset = .2;
 	const speed = .4;
 
-	const computeUpdate = tslFn( () => {
+	const computeUpdate = Fn( () => {
 
 		const getCoord = ( pos ) => pos.add( 50 ).div( 100 );
 
@@ -145,12 +130,12 @@ async function init() {
 
 		If( position.y.greaterThan( rippleFloorArea ), () => {
 
-			position.x = particleData.x.add( timer.mul( random.mul( random ) ).mul( speed ).sin().mul( 3 ) );
-			position.z = particleData.z.add( timer.mul( random ).mul( speed ).cos().mul( random.mul( 10 ) ) );
+			position.x = particleData.x.add( time.mul( random.mul( random ) ).mul( speed ).sin().mul( 3 ) );
+			position.z = particleData.z.add( time.mul( random ).mul( speed ).cos().mul( random.mul( 10 ) ) );
 
 			position.y = position.y.add( velocity );
 
-		} ).else( () => {
+		} ).Else( () => {
 
 			staticPositionBuffer.element( instanceIndex ).assign( position );
 
@@ -169,7 +154,7 @@ async function init() {
 		const posBuffer = staticParticles ? staticPositionBuffer : positionBuffer;
 		const layer = staticParticles ? 1 : 2;
 
-		const staticMaterial = new MeshStandardNodeMaterial( {
+		const staticMaterial = new THREE.MeshStandardNodeMaterial( {
 			color: 0xeeeeee,
 			roughness: .9,
 			metalness: 0
@@ -178,7 +163,6 @@ async function init() {
 		staticMaterial.positionNode = positionLocal.mul( scaleBuffer.toAttribute() ).add( posBuffer.toAttribute() );
 
 		const rainParticles = new THREE.Mesh( geometry, staticMaterial );
-		rainParticles.isInstancedMesh = true;
 		rainParticles.count = maxParticleCount;
 		rainParticles.castShadow = true;
 		rainParticles.layers.disableAll();
@@ -214,7 +198,7 @@ async function init() {
 
 	function tree( count = 8 ) {
 
-		const coneMaterial = new MeshStandardNodeMaterial( {
+		const coneMaterial = new THREE.MeshStandardNodeMaterial( {
 			color: 0x0d492c,
 			roughness: .6,
 			metalness: 0
@@ -244,7 +228,7 @@ async function init() {
 
 	}
 
-	const teapotTree = new THREE.Mesh( new TeapotGeometry( .5, 18 ), new MeshBasicNodeMaterial( {
+	const teapotTree = new THREE.Mesh( new TeapotGeometry( .5, 18 ), new THREE.MeshBasicNodeMaterial( {
 		color: 0xfcfb9e
 	} ) );
 
@@ -255,11 +239,11 @@ async function init() {
 
 	//
 
-	scene.backgroundNode = viewportTopLeft.distance( .5 ).mul( 2 ).mix( color( 0x0f4140 ), color( 0x060a0d ) );
+	scene.backgroundNode = screenUV.distance( .5 ).mul( 2 ).mix( color( 0x0f4140 ), color( 0x060a0d ) );
 
 	//
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
@@ -268,7 +252,9 @@ async function init() {
 
 	stats = new Stats( {
 		precision: 3,
-		horizontal: false
+		horizontal: false,
+		trackGPU: true,
+		trackCPT: true
 	} );
 	stats.init( renderer );
 	document.body.appendChild( stats.dom );
@@ -289,13 +275,13 @@ async function init() {
 
 	const scenePass = pass( scene, camera );
 	const scenePassColor = scenePass.getTextureNode();
-	const vignet = viewportTopLeft.distance( .5 ).mul( 1.35 ).clamp().oneMinus();
+	const vignette = screenUV.distance( .5 ).mul( 1.35 ).clamp().oneMinus();
 
 	const teapotTreePass = pass( teapotTree, camera ).getTextureNode();
-	const teapotTreePassBlurred = teapotTreePass.gaussianBlur( 3 );
+	const teapotTreePassBlurred = gaussianBlur( teapotTreePass, vec2( 1 ), 3 );
 	teapotTreePassBlurred.resolution = new THREE.Vector2( .2, .2 );
 
-	const scenePassColorBlurred = scenePassColor.gaussianBlur();
+	const scenePassColorBlurred = gaussianBlur( scenePassColor );
 	scenePassColorBlurred.resolution = new THREE.Vector2( .5, .5 );
 	scenePassColorBlurred.directionNode = vec2( 1 );
 
@@ -303,10 +289,10 @@ async function init() {
 
 	let totalPass = scenePass;
 	totalPass = totalPass.add( scenePassColorBlurred.mul( .1 ) );
-	totalPass = totalPass.mul( vignet );
+	totalPass = totalPass.mul( vignette );
 	totalPass = totalPass.add( teapotTreePass.mul( 10 ).add( teapotTreePassBlurred ) );
 
-	postProcessing = new PostProcessing( renderer );
+	postProcessing = new THREE.PostProcessing( renderer );
 	postProcessing.outputNode = totalPass;
 
 	//
@@ -338,11 +324,12 @@ async function animate() {
 
 	scene.overrideMaterial = collisionPosMaterial;
 	renderer.setRenderTarget( collisionPosRT );
-	await renderer.renderAsync( scene, collisionCamera );
+	renderer.render( scene, collisionCamera );
 
 	// compute
 
-	await renderer.computeAsync( computeParticles );
+	renderer.compute( computeParticles );
+	renderer.resolveTimestampsAsync( THREE.TimestampQuery.COMPUTE );
 
 	// result
 
@@ -351,6 +338,7 @@ async function animate() {
 
 	await postProcessing.renderAsync();
 
+	renderer.resolveTimestampsAsync();
 	stats.update();
 
 }

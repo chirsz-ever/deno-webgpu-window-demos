@@ -1,15 +1,10 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_reflection.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_reflection.html
 
 import * as THREE from 'three';
-import { MeshPhongNodeMaterial, color, pass, reflector, normalWorld, texture, uv, viewportTopLeft } from 'three/nodes';
+import { color, pass, reflector, normalWorld, texture, uv, screenUV } from 'three/tsl';
+import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-import PostProcessing from 'three/addons/renderers/common/PostProcessing.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -28,14 +23,6 @@ let stats;
 init();
 
 function init() {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.25, 30 );
 	camera.position.set( 2, 2.5, 3 );
@@ -107,7 +94,7 @@ function init() {
 	reflection.uvNode = reflection.uvNode.add( floorNormalOffset );
 	scene.add( reflection.target );
 
-	const floorMaterial = new MeshPhongNodeMaterial();
+	const floorMaterial = new THREE.MeshPhongNodeMaterial();
 	floorMaterial.colorNode = texture( floorColor, floorUV ).add( reflection );
 
 	const floor = new THREE.Mesh( new THREE.BoxGeometry( 50, .001, 50 ), floorMaterial );
@@ -118,10 +105,11 @@ function init() {
 
 	// renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
+	renderer.shadowMap.enabled = true;
 	document.body.appendChild( renderer.domElement );
 
 	stats = new Stats();
@@ -140,15 +128,15 @@ function init() {
 
 	const scenePass = pass( scene, camera );
 	const scenePassColor = scenePass.getTextureNode();
-	const scenePassDepth = scenePass.getDepthNode().remapClamp( .3, .5 );
+	const scenePassDepth = scenePass.getLinearDepthNode().remapClamp( .3, .5 );
 
-	const scenePassColorBlurred = scenePassColor.gaussianBlur();
+	const scenePassColorBlurred = gaussianBlur( scenePassColor );
 	scenePassColorBlurred.directionNode = scenePassDepth;
 
-	const vignet = viewportTopLeft.distance( .5 ).mul( 1.35 ).clamp().oneMinus();
+	const vignette = screenUV.distance( .5 ).mul( 1.35 ).clamp().oneMinus();
 
-	postProcessing = new PostProcessing( renderer );
-	postProcessing.outputNode = scenePassColorBlurred.mul( vignet );
+	postProcessing = new THREE.PostProcessing( renderer );
+	postProcessing.outputNode = scenePassColorBlurred.mul( vignette );
 
 	//
 

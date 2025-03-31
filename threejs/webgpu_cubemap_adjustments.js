@@ -1,12 +1,7 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_cubemap_adjustments.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_cubemap_adjustments.html
 
 import * as THREE from 'three';
-import { uniform, mix, pmremTexture, reference, positionLocal, positionWorld, normalWorld, positionWorldDirection, reflectVector, toneMapping } from 'three/nodes';
-
-import WebGPU from 'three/addons/capabilities/WebGPU.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { uniform, mix, pmremTexture, reference, positionLocal, hue, saturation, positionWorld, normalWorld, positionWorldDirection, reflectVector } from 'three/tsl';
 
 import { RGBMLoader } from 'three/addons/loaders/RGBMLoader.js';
 
@@ -24,14 +19,6 @@ let camera, scene, renderer;
 init();
 
 async function init() {
-
-	if ( WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false ) {
-
-		document.body.appendChild( WebGPU.getErrorMessage() );
-
-		throw new Error( 'No WebGPU or WebGL2 support' );
-
-	}
 
 	const container = document.createElement( 'div' );
 	document.body.appendChild( container );
@@ -90,8 +77,8 @@ async function init() {
 		const proceduralEnv = mix( mixCubeMaps, normalWorld, proceduralNode );
 
 		const intensityFilter = proceduralEnv.mul( intensityNode );
-		const hueFilter = intensityFilter.hue( hueNode );
-		return hueFilter.saturation( saturationNode );
+		const hueFilter = hue( intensityFilter, hueNode );
+		return saturation( hueFilter, saturationNode );
 
 	};
 
@@ -123,10 +110,10 @@ async function init() {
 
 	// renderer and controls
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.toneMappingNode = toneMapping( THREE.LinearToneMapping, 1 );
+	renderer.toneMapping = THREE.LinearToneMapping;
 	renderer.setAnimationLoop( render );
 	container.appendChild( renderer.domElement );
 

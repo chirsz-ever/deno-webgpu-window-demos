@@ -1,17 +1,15 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_portal.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_portal.html
 
 import * as THREE from 'three';
-import { pass, color, mx_worley_noise_float, timerLocal, viewportTopLeft, vec2, uv, normalWorld, mx_fractal_noise_vec3, toneMapping, MeshBasicNodeMaterial } from 'three/nodes';
+import { pass, color, mx_worley_noise_float, time, screenUV, vec2, uv, normalWorld, mx_fractal_noise_vec3 } from 'three/tsl';
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js - WebGPU - Portal");
+await polyfill.init("three.js webgpu - portal");
 
 let camera, sceneMain, scenePortal, renderer;
 let clock;
@@ -29,7 +27,7 @@ function init() {
 	sceneMain.backgroundNode = normalWorld.y.mix( color( 0x0066ff ), color( 0xff0066 ) );
 
 	scenePortal = new THREE.Scene();
-	scenePortal.backgroundNode = mx_worley_noise_float( normalWorld.mul( 20 ).add( vec2( 0, timerLocal().oneMinus() ) ) ).mul( color( 0x0066ff ) );
+	scenePortal.backgroundNode = mx_worley_noise_float( normalWorld.mul( 20 ).add( vec2( 0, time.oneMinus() ) ) ).mul( color( 0x0066ff ) );
 
 	//
 
@@ -93,7 +91,7 @@ function init() {
 
 		};
 
-		const colorNode = mx_fractal_noise_vec3( uv().mul( 20 ).add( timerLocal() ) );
+		const colorNode = mx_fractal_noise_vec3( uv().mul( 20 ).add( time ) );
 
 		const modelMain = createModel();
 		const modelPortal = createModel( colorNode );
@@ -109,8 +107,8 @@ function init() {
 
 	const geometry = new THREE.PlaneGeometry( 1.7, 2 );
 
-	const material = new MeshBasicNodeMaterial();
-	material.colorNode = pass( scenePortal, camera ).context( { getUV: () => viewportTopLeft } );
+	const material = new THREE.MeshBasicNodeMaterial();
+	material.colorNode = pass( scenePortal, camera ).context( { getUV: () => screenUV } );
 	material.opacityNode = uv().distance( .5 ).remapClamp( .3, .5 ).oneMinus();
 	material.side = THREE.DoubleSide;
 	material.transparent = true;
@@ -121,11 +119,12 @@ function init() {
 
 	// renderer
 
-	renderer = new WebGPURenderer( { antialias: true } );
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
-	renderer.toneMappingNode = toneMapping( THREE.LinearToneMapping, .15 );
+	renderer.toneMapping = THREE.LinearToneMapping;
+	renderer.toneMappingExposure = 0.15;
 	document.body.appendChild( renderer.domElement );
 
 	//

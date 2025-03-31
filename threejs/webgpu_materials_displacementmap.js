@@ -1,20 +1,16 @@
-// https://github.com/mrdoob/three.js/blob/r165/examples/webgpu_materials_displacementmap.html
+// https://github.com/mrdoob/three.js/blob/r175/examples/webgpu_materials_displacementmap.html
 
 import * as THREE from 'three';
 
 import Stats from 'three/addons/libs/stats.module.js';
 
-import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
-
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-
-import { MeshStandardNodeMaterial } from 'three/nodes';
 
 /* POLYFILL */
 import * as polyfill from "./polyfill.ts";
-await polyfill.init("three.js webgpu - materials - displacement map");
+await polyfill.init("three.js webgpu - displacement map");
 
 let stats;
 let camera, scene, renderer, controls;
@@ -94,7 +90,7 @@ function init() {
 	const container = document.createElement( 'div' );
 	document.body.appendChild( container );
 
-	renderer = new WebGPURenderer();
+	renderer = new THREE.WebGPURenderer();
 	renderer.setAnimationLoop( animate );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
@@ -151,7 +147,7 @@ function init() {
 
 	// material
 
-	material = new MeshStandardNodeMaterial( {
+	material = new THREE.MeshStandardNodeMaterial( {
 
 		color: 0xc1c1c1,
 		roughness: settings.roughness,
