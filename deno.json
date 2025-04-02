@@ -1,10 +1,11 @@
 {
     "imports": {
-        "three": "npm:three@0.175.0/webgpu",
-        "three/webgpu": "npm:three@0.175.0/webgpu",
-        "three/addons": "npm:three@0.175.0/addons",
-        "three/src": "npm:three@0.175.0/src",
-        "three/tsl": "npm:three@0.175.0/tsl",
+        "three": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.WebGPU.js",
+        "three/webgpu": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.WebGPU.js",
+        "three/addons": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/Addons.js",
+        "three/addons/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/",
+        "three/src/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/",
+        "three/tsl": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.TSL.js",
         "deno_sdl2": "jsr:@divy/sdl2@0.14.0",
         "three/addons/libs/lil-gui.module.min.js": "./threejs/polyfill/gui.ts",
         "three/addons/libs/stats.module.js": "./threejs/polyfill/stats.ts",
