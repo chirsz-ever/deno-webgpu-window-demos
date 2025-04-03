@@ -286,7 +286,12 @@ if (!location) {
         const input_str = input instanceof Request ? input.url : input.toString();
         if (is_cachable_url(input_str)) {
             const data = await load_with_cache(input_str);
-            return new Response(data, { status: 200 });
+            // https://docs.deno.com/runtime/reference/web_platform_apis/#fetching-local-files
+            // > No headers are set on the response. Therefore it is up to the consumer to determine things like the content type or content length.
+            const ctype = input_str.endsWith(".jpg") ? "image/jpeg" : input_str.endsWith(".png") ? "image/png" : input_str.endsWith(".gif") ? "image/gif" : undefined;
+            // console.info(`fetch("${input_str}"): content-type: ${ctype}`);
+            const headers = ctype ? { "content-type": ctype } : undefined;
+            return new Response(data, { status: 200, headers });
         }
         if (!input_str.startsWith("blob:"))
             console.info(`fetch(${input_str}) without cache`);
@@ -553,10 +558,12 @@ class GPUCanvasContextMock implements GPUCanvasContext {
 
 // TypeScript definitions for WebGPU: https://github.com/gpuweb/types/blob/main/dist/index.d.ts
 
+type HTMLImageElement = Image;
+
 type GPUImageCopyExternalImageSource =
     | ImageBitmap
     | ImageData
-    // | HTMLImageElement
+    | HTMLImageElement
     // | HTMLVideoElement
     // | VideoFrame
     // | HTMLCanvasElement
@@ -619,29 +626,54 @@ interface GPUImageDataLayout {
 //     }
 // };
 
+// https://github.com/denoland/deno/issues/23576
 (GPUQueue.prototype as any).copyExternalImageToTexture = function (
-    source: GPUImageCopyExternalImage,
+    this: GPUQueue,
+    sourceOptions: GPUImageCopyExternalImage,
     destination: GPUImageCopyTextureTagged,
     _copySize: GPUExtent3D
 ) {
-    let imgData: BufferSource;
+    // TODO: handle rgba8unorm-srgb
+    let imgData: Uint8ClampedArray | Uint8Array;
     let width: number;
     let height: number;
-    if (source.source instanceof ImageBitmap) {
-        imgData = getImageBitmapData(source.source);
-        ({ height, width } = source.source);
-    } else if (source.source instanceof ImageData) {
-        imgData = source.source.data;
-        ({ height, width } = source.source);
-    } else if ((source.source as any) instanceof Image) {
-        imgData = (source.source as any)._imageData.data;
-        ({ height, width } = source.source);
+    const source = sourceOptions.source;
+    if (source instanceof ImageBitmap) {
+        // Maybe other types, such as RGB8
+        imgData = getImageBitmapData(source);
+        ({ height, width } = source);
+    } else if (source instanceof ImageData) {
+        // RGBA8
+        imgData = source.data;
+        ({ height, width } = source);
+    } else if (source instanceof Image) {
+        // RGBA8
+        imgData = (source as any)._imageData.data as Uint8ClampedArray;
+        ({ height, width } = source);
     } else {
         throw new TypeError("not support call GPUQueue.copyExternalImageToTexture with that source");
     }
 
+    if (imgData.length !== 4 * width * height) {
+        if (imgData.length === 3 * width * height) {
+            // Hack: RGB8 -> RGBA8
+            const newData = new Uint8Array(4 * width * height);
+            for (let i = 0; i < width * height; i++) {
+                const b = i * 3;
+                const a = i * 4;
+                newData[a + 3] = 255;
+                newData[a + 0] = imgData[b + 0];
+                newData[a + 1] = imgData[b + 1];
+                newData[a + 2] = imgData[b + 2];
+            }
+            imgData = newData;
+        } else {
+            throw new Error(`copyExternalImageToTexture: imgData: length: ${imgData.length}, width: ${width}, height: ${height}`);
+        }
+    }
+
     // suppose to RGBA8 format
-    (this as GPUQueue).writeTexture(destination, imgData, {
+    this.writeTexture(destination, imgData, {
         offset: 0,
         bytesPerRow: 4 * width,
         rowsPerImage: height,
@@ -656,7 +688,7 @@ if (typeof GPUDevice.prototype.lost === 'undefined') {
 let s_data: symbol;
 
 // HACK: internal deno, because deno do not support decode image.
-function getImageBitmapData(bitmap: ImageBitmap) {
+function getImageBitmapData(bitmap: ImageBitmap): Uint8Array {
     if (s_data === undefined) {
         for (const s of Object.getOwnPropertySymbols(bitmap)) {
             switch (s.description) {
@@ -669,22 +701,25 @@ function getImageBitmapData(bitmap: ImageBitmap) {
     return (bitmap as any)[s_data]
 }
 
-// FIXME: hook createImageBitmap
+// https://github.com/denoland/deno/issues/28723
 const createImageBitmap_origin = globalThis.createImageBitmap;
-(globalThis as any).createImageBitmap = async function (image: ImageBitmapSource, options?: ImageBitmapOptions | undefined) {
-    // console.log(`createImageBitmap: `, image, options)
-    if (options && options.colorSpaceConversion === "none")
-        options.colorSpaceConversion = "default"
-    if (options && options.premultiplyAlpha !== "default")
-        options.premultiplyAlpha = "default"
-    if (image instanceof ImageData) {
-        return createImageBitmap_origin(image, options);
-    } else if (image instanceof Blob) {
-        const imgData = await loadImageData(await image.arrayBuffer());
-        return createImageBitmap_origin(imgData, options);
-    } else {
-        throw new Error(`createImageBitmap: unsupported image ${image}`)
+(globalThis as any).createImageBitmap = async function (image: ImageBitmapSource, ...args: any[]) {
+    if (image instanceof Blob) {
+        if (image.type)
+            return createImageBitmap_origin(image, ...args);
+
+        const buffer = await image.arrayBuffer();
+        const u8view = new Uint8Array(buffer);
+        const ctype = is_png(u8view) ? 'image/png' : is_jpeg(u8view) ? 'image/jpeg' : is_gif(u8view) ? 'image/gif' : undefined;
+        // console.info(`createImageBitmap: detect content-type: ${ctype}`)
+        if (!ctype)
+            return createImageBitmap_origin(image, ...args);
+
+        const newBlob = image.slice(0, image.size, ctype);
+        return createImageBitmap_origin(newBlob, ...args);
     }
+
+    return createImageBitmap_origin(image, ...args);
 };
 
 function startsWith<T>(arr: ArrayLike<T>, prefix: ArrayLike<T>): boolean {
