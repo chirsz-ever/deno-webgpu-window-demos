@@ -9,7 +9,7 @@ import {
     EventType,
     WindowBuilder,
     getKeyName,
-    Window,
+    Window as SDLWindow,
 } from "deno_sdl2";
 
 import { GPUFeatureName as gpu_feature_names } from 'three/src/renderers/webgpu/utils/WebGPUConstants.js';
@@ -140,7 +140,7 @@ WebGPURenderer.prototype.init = async function init() {
     return Object.getPrototypeOf(WebGPURenderer.prototype).init.call(this);
 }
 
-let win: Window;
+let win: SDLWindow;
 let surface: Deno.UnsafeWindowSurface;
 let canvasDomMock: CanvasDomMock;
 let contextMock: GPUCanvasContextMock;
