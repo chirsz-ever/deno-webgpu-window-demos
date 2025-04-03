@@ -144,7 +144,6 @@ let win: SDLWindow;
 let surface: Deno.UnsafeWindowSurface;
 let canvasDomMock: CanvasDomMock;
 let contextMock: GPUCanvasContextMock;
-const preferredFormat = navigator.gpu.getPreferredCanvasFormat();
 
 type FrameRequestCallback = (time: number) => void;
 
@@ -161,7 +160,6 @@ function sleep(timeout: number): Promise<void> {
 const VALIDATION = Deno.args[0] == "--enable-validation";
 
 let button0 = 0;
-let currentTextureGot = false;
 
 export async function runWindowEventLoop() {
     // TODO: Handle mouse and keyboard events, handle window resize event
@@ -228,22 +226,19 @@ export async function runWindowEventLoop() {
                 }
             }
 
-            if (currentTextureGot) {
-                contextMock._renderCurrentTexture();
-                try {
-                    surface.present();
-                    // I don't exactly know why, but this is needed to make it work.
-                    surface = win.windowSurface(canvasDomMock.clientWidth, canvasDomMock.clientHeight);
-                    contextMock._setContext(surface.getContext("webgpu"));
-                } catch (e) {
-                    if (e instanceof Error) {
-                        console.error(e.stack);
-                    } else {
-                        console.error(e);
-                    }
-                    Deno.exit(1)
+            try {
+                surface.present();
+                // FIXME: this should be fixed after https://github.com/denoland/deno/pull/28691
+                // need be tested when Deno 2.2.7 is released
+                surface = win.windowSurface(canvasDomMock.clientWidth, canvasDomMock.clientHeight);
+                contextMock._setContext(surface.getContext("webgpu"));
+            } catch (e) {
+                if (e instanceof Error) {
+                    console.error(e.stack);
+                } else {
+                    console.error(e);
                 }
-                currentTextureGot = false;
+                Deno.exit(1)
             }
 
             if (VALIDATION) {
@@ -485,7 +480,7 @@ export async function init(title: string) {
     }
 
     // feature support
-    const features: GPUFeatureName[] = Object.values(gpu_feature_names);
+    const features: GPUFeatureName[] = Object.values(gpu_feature_names) as GPUFeatureName[];
     const supportedFeatures: GPUFeatureName[] = [];
     for (const name of features) {
         if (adapter.features.has(name)) {
@@ -535,69 +530,11 @@ class GPUCanvasContextMock implements GPUCanvasContext {
     }
 
     getCurrentTexture(): GPUTexture {
-        // WORKAROUND: context.getCurrentTexture() cannot be invoked twice without present
-        // see https://github.com/denoland/deno/issues/24313
-        if (!this.#currentTexture || this.#currentTexture.width != this.width || this.#currentTexture.height != this.height) {
-            this.#currentTexture?.destroy();
-            this.#currentTexture = device.createTexture({
-                format: preferredFormat,
-                size: [this.width, this.height],
-                usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-                label: '[polyfill currentTexture]',
-            })
-        }
-
-        currentTextureGot = true;
-        return this.#currentTexture;
+        return this.context.getCurrentTexture();
     }
 
     unconfigure(): undefined {
         this.context.unconfigure();
-    }
-
-    _renderCurrentTexture() {
-        // WORKAROUND: Error: Invalid Surface Status
-        // see https://github.com/denoland/deno/issues/23407
-        let surfaceTexture;
-        try {
-            surfaceTexture = this.context.getCurrentTexture();
-        } catch (_e) {
-            // console.error(_e);
-            this.context.configure(this.#configuration!);
-            surfaceTexture = this.context.getCurrentTexture();
-        }
-
-        const cmdEncoder = device.createCommandEncoder();
-        const renderPass = cmdEncoder.beginRenderPass({
-            colorAttachments: [{
-                loadOp: "clear",
-                storeOp: "store",
-                clearValue: [1, 0, 0, 1],
-                view: surfaceTexture.createView(),
-            }]
-        });
-        renderPass.setPipeline(simpleRenderPipeline());
-        renderPass.setBindGroup(0, this._bindGroup());
-        renderPass.draw(6);
-        renderPass.end();
-        device.queue.submit([cmdEncoder.finish()]);
-    }
-
-    #bindGroup?: GPUBindGroup
-
-    _bindGroup(): GPUBindGroup {
-        if (!this.#bindGroup) {
-            this.#bindGroup = device.createBindGroup({
-                entries: [
-                    {
-                        binding: 0,
-                        resource: this.getCurrentTexture().createView(),
-                    }
-                ],
-                layout: simpleRenderPipeline().getBindGroupLayout(0),
-            });
-        }
-        return this.#bindGroup;
     }
 
     _resize(width: number, height: number) {
@@ -606,60 +543,12 @@ class GPUCanvasContextMock implements GPUCanvasContext {
         if (!this.#configuration)
             return;
         contextMock.context.configure(this.#configuration);
-        this.#bindGroup = undefined;
     }
 
     _setContext(context: GPUCanvasContext) {
         this.context = context;
+        this.context.configure(this.#configuration!);
     }
-}
-
-const simpleShader = /* wgsl */`
-@vertex
-fn vert_main(@builtin(vertex_index) vindex: u32) -> @builtin(position) vec4f {
-    // FIXME: not 'let': The expression may only be indexed by a constant
-    var vertexes = array(
-        vec2f(-1.0,  1.0),
-        vec2f(-1.0, -1.0),
-        vec2f( 1.0,  1.0),
-        vec2f( 1.0,  1.0),
-        vec2f(-1.0, -1.0),
-        vec2f( 1.0, -1.0),
-    );
-    return vec4<f32>(vertexes[vindex], 0.0, 1.0);
-}
-
-@group(0) @binding(0) var ourTexture: texture_2d<f32>;
-
-@fragment
-fn frag_main(@builtin(position) frag_coord: vec4f) -> @location(0) vec4<f32> {
-    return textureLoad(ourTexture, vec2i(frag_coord.xy), 0);
-}
-`;
-
-let _simpleRenderPipeline: GPURenderPipeline | undefined;
-function simpleRenderPipeline(): GPURenderPipeline {
-    if (_simpleRenderPipeline)
-        return _simpleRenderPipeline;
-
-    const simpleMoudle = device.createShaderModule({
-        code: simpleShader,
-    });
-    _simpleRenderPipeline = device.createRenderPipeline({
-        layout: "auto",
-        vertex: {
-            module: simpleMoudle,
-        },
-        fragment: {
-            module: simpleMoudle,
-            targets: [
-                {
-                    format: preferredFormat,
-                },
-            ],
-        },
-    });
-    return _simpleRenderPipeline;
 }
 
 // TypeScript definitions for WebGPU: https://github.com/gpuweb/types/blob/main/dist/index.d.ts
