@@ -312,7 +312,9 @@ if (!location) {
     globalThis.Request = RequestMock;
 
     const THREEJS_RES_BASE_URL = "https://threejs.org/examples/";
+    const THREEJS_RES_BASE_URL_POLYFILL = "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/";
     const MATERIALX_RES_BASE_URL = "https://raw.githubusercontent.com/materialx/MaterialX/main/resources/";
+    const MATERIALX_RES_BASE_URL_POLYFILL = "https://cdn.jsdelivr.net/gh/materialx/MaterialX@1.39/resources/";
 
     const load_with_cache = async function (uri: string): Promise<ArrayBuffer> {
         // console.log(`loading ${uri}`);
@@ -325,16 +327,19 @@ if (!location) {
             return res.arrayBuffer();
         } else if (is_cachable_url(uri)) {
             // load three.js and MaterialX with cache
-            let localPath;
-            let remotePath;
+            let localPath: string;
+            let remotePath: string;
+            let subpath: string;
             if (uri.startsWith(THREEJS_RES_BASE_URL)) {
-                remotePath = uri;
-                localPath = join(import.meta.dirname!, uri.slice(THREEJS_RES_BASE_URL.length));
+                subpath = uri.slice(THREEJS_RES_BASE_URL.length);
+                remotePath = new URL(subpath, THREEJS_RES_BASE_URL_POLYFILL).toString();
+                localPath = join(import.meta.dirname!, subpath);
             } else if (uri.startsWith(MATERIALX_RES_BASE_URL)) {
-                remotePath = uri;
-                localPath = join(import.meta.dirname!, "materialx", uri.slice(MATERIALX_RES_BASE_URL.length));
+                subpath = uri.slice(MATERIALX_RES_BASE_URL.length);
+                remotePath = new URL(subpath, MATERIALX_RES_BASE_URL_POLYFILL).toString();
+                localPath = join(import.meta.dirname!, "materialx", subpath);
             } else {
-                remotePath = new URL(uri, THREEJS_RES_BASE_URL).toString();
+                remotePath = new URL(uri, THREEJS_RES_BASE_URL_POLYFILL).toString();
                 localPath = join(import.meta.dirname!, uri);
             }
             return load_with_cache_abs(remotePath, localPath);
