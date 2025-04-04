@@ -4,7 +4,7 @@ This repo try to run WeGPU-backended 3D engines on [Deno](https://deno.com), lik
 
 ## How to run
 
-You need install [Deno](https://deno.com) first. Require Deno 2.2.
+You need install [Deno](https://deno.com) first. Require Deno version 2.2.7.
 
 Then run the following command to run the "backdrop" demo:
 

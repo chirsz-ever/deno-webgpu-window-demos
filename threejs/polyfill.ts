@@ -161,6 +161,9 @@ const VALIDATION = Deno.args[0] == "--enable-validation";
 
 let button0 = 0;
 
+// avoid preset twice
+let currentTextureGot = false;
+
 export async function runWindowEventLoop() {
     // TODO: Handle mouse and keyboard events, handle window resize event
     for await (const event of win.events()) {
@@ -226,19 +229,18 @@ export async function runWindowEventLoop() {
                 }
             }
 
-            try {
-                surface.present();
-                // FIXME: this should be fixed after https://github.com/denoland/deno/pull/28691
-                // need be tested when Deno 2.2.7 is released
-                surface = win.windowSurface(canvasDomMock.clientWidth, canvasDomMock.clientHeight);
-                contextMock._setContext(surface.getContext("webgpu"));
-            } catch (e) {
-                if (e instanceof Error) {
-                    console.error(e.stack);
-                } else {
-                    console.error(e);
+            if (currentTextureGot) {
+                try {
+                    surface.present();
+                } catch (e) {
+                    if (e instanceof Error) {
+                        console.error(e.stack);
+                    } else {
+                        console.error(e);
+                    }
+                    Deno.exit(1)
                 }
-                Deno.exit(1)
+                currentTextureGot = false;
             }
 
             if (VALIDATION) {
@@ -535,6 +537,7 @@ class GPUCanvasContextMock implements GPUCanvasContext {
     }
 
     getCurrentTexture(): GPUTexture {
+        currentTextureGot = true;
         return this.context.getCurrentTexture();
     }
 
@@ -604,28 +607,6 @@ interface GPUImageDataLayout {
 }
 
 // FIXME: deno do not support copyExternalImageToTexture
-// https://github.com/denoland/deno/issues/23576
-// const copyExternalImageToTexture_origin = (GPUQueue.prototype as any).copyExternalImageToTexture;
-// (GPUQueue.prototype as any).copyExternalImageToTexture = function (
-//     source: GPUImageCopyExternalImage,
-//     destination: GPUImageCopyTextureTagged,
-//     copySize: GPUExtent3D
-// ) {
-//     if (source.source instanceof ImageBitmap || source.source instanceof ImageData) {
-//         copyExternalImageToTexture_origin.call(this, source, destination, copySize);
-//     } else if ((source.source as any) instanceof Image) {
-//         const imgBmp = (source.source as any)._imageBitmap!;
-//         const imgData = new ImageData(new Uint8ClampedArray(getImageBitmapData(imgBmp)), imgBmp.width, imgBmp.height);
-//         const newSource = {
-//             ...source,
-//             source: imgData,
-//         };
-//         copyExternalImageToTexture_origin.call(this, newSource, destination, copySize);
-//     } else {
-//         throw new TypeError("not support call GPUQueue.copyExternalImageToTexture with that source");
-//     }
-// };
-
 // https://github.com/denoland/deno/issues/23576
 (GPUQueue.prototype as any).copyExternalImageToTexture = function (
     this: GPUQueue,
@@ -772,6 +753,7 @@ GPUDevice.prototype.createShaderModule = function (descriptor: GPUShaderModuleDe
     if (descriptor.code.search(reIlligalCast) != -1) {
         descriptor.code = descriptor.code.replaceAll(reIlligalCast, (_, n) => Math.trunc(n).toString());
     }
+    // https://github.com/gfx-rs/wgpu/issues/7471
     if (descriptor.code.search(patEnableSubgroup) != -1) {
         descriptor.code = descriptor.code.replaceAll(patEnableSubgroup, '');
     }
