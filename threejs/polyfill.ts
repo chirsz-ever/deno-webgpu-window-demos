@@ -83,7 +83,7 @@ class CanvasDomMock extends EventTarget {
         return this.width;
     }
 
-    constructor(private width: number, private height: number) {
+    constructor(private surface: Deno.UnsafeWindowSurface, private width: number, private height: number) {
         super();
     }
 
@@ -102,7 +102,10 @@ class CanvasDomMock extends EventTarget {
         if (name !== "webgpu") {
             throw new Error(`canvas.getContext("${name}") is not supported`)
         }
-        return contextMock;
+
+        const context = this.surface.getContext(name);
+        currentContextMock = new GPUCanvasContextMock(context);
+        return currentContextMock;
     }
 
     setPointerCapture() {
@@ -128,22 +131,21 @@ function setMouseEventXY(evt: MouseEvent, x: number, y: number, isMove = false) 
     }
 }
 
-// FIXME: https://github.com/denoland/deno/issues/23433
-// for this, we had to create the device before anything
-let device: GPUDevice;
+let currentDevice: GPUDevice | undefined;
+let currentContextMock: GPUCanvasContextMock | undefined;
 
 // make Three.js always use our mocked objects
 WebGPURenderer.prototype.init = async function init() {
-    this.backend.parameters.device = device;
     this.backend.parameters.canvas = canvasDomMock;
-    this.backend.parameters.context = contextMock;
-    return Object.getPrototypeOf(WebGPURenderer.prototype).init.call(this);
+    return Object.getPrototypeOf(WebGPURenderer.prototype).init.call(this).then((renderer: WebGPURenderer) => {
+        currentDevice = this.backend.device;
+        return renderer;
+    });
 }
 
 let win: SDLWindow;
 let surface: Deno.UnsafeWindowSurface;
 let canvasDomMock: CanvasDomMock;
-let contextMock: GPUCanvasContextMock;
 
 type FrameRequestCallback = (time: number) => void;
 
@@ -165,7 +167,7 @@ let button0 = 0;
 let currentTextureGot = false;
 
 export async function runWindowEventLoop() {
-    // TODO: Handle mouse and keyboard events, handle window resize event
+    // TODO: Handle keyboard events
     for await (const event of win.events()) {
         if (event.type === EventType.Quit) {
             break;
@@ -199,6 +201,7 @@ export async function runWindowEventLoop() {
         }
         else if (event.type === EventType.WindowEvent) {
             switch (event.event) {
+                // FIXME: resize not work on Linux
                 // SDL_WINDOWEVENT_SIZE_CHANGED
                 case 6: {
                     // console.info(`resize(${event.data1}, ${event.data2})`);
@@ -206,7 +209,10 @@ export async function runWindowEventLoop() {
                     const new_height = event.data2;
                     (window as any).innerWidth = new_width;
                     (window as any).innerHeight = new_height;
-                    contextMock._resize(new_width, new_height);
+                    surface = win.windowSurface(new_width, new_height);
+                    const context = surface.getContext("webgpu");
+                    currentContextMock?._setContext(context);
+                    currentContextMock?._reconfigure();
 
                     requestAnimationFrameCallbacks.unshift(() => {
                         (window).dispatchEvent(new Event("resize"));
@@ -216,10 +222,10 @@ export async function runWindowEventLoop() {
         }
         else if (event.type === EventType.Draw) {
 
-            if (VALIDATION)
-                device.pushErrorScope("validation");
+            if (requestAnimationFrameCallbacks.length > 0) {
+                if (VALIDATION)
+                    currentDevice?.pushErrorScope("validation");
 
-            if (requestAnimationFrameCallbacks.length != 0) {
                 const currentCallbacks = requestAnimationFrameCallbacks;
                 requestAnimationFrameCallbacks = [];
                 const t = performance.now();
@@ -227,29 +233,21 @@ export async function runWindowEventLoop() {
                     const callback = currentCallbacks.shift();
                     callback!(t);
                 }
-            }
 
-            if (currentTextureGot) {
-                try {
+                // TODO: maybe now we donot need currentTextureGot
+                if (currentTextureGot) {
                     surface.present();
-                } catch (e) {
-                    if (e instanceof Error) {
-                        console.error(e.stack);
-                    } else {
-                        console.error(e);
-                    }
-                    Deno.exit(1)
+                    currentTextureGot = false;
                 }
-                currentTextureGot = false;
-            }
 
-            if (VALIDATION) {
-                device.popErrorScope().then((error) => {
-                    if (error) {
-                        console.error(`WebGPU validation error: ${error.message}`);
-                        Deno.exit(1);
-                    }
-                });
+                if (VALIDATION) {
+                    currentDevice?.popErrorScope().then((error) => {
+                        if (error) {
+                            console.error(`WebGPU validation error: ${error.message}`);
+                            Deno.exit(1);
+                        }
+                    });
+                }
             }
 
             // FIXME: deno_sdl2 UI events would block network events?
@@ -500,36 +498,25 @@ export async function init(title: string) {
         }
     }
 
-    device = await adapter.requestDevice({
-        requiredFeatures: supportedFeatures,
-    });
-
     const width = INIT_WIDTH;
     const height = INIT_HEIGHT;
 
     win = new WindowBuilder(title, width, height).resizable().build();
     surface = win.windowSurface(width, height);
 
-    canvasDomMock = new CanvasDomMock(width, height);
-
-    // FIXME: three.js getContext would get error.
-    const context = surface.getContext("webgpu");
-
-    contextMock = new GPUCanvasContextMock(context, width, height);
+    canvasDomMock = new CanvasDomMock(surface, width, height);
 
     // FIXME?: runWindowEventLoop must run after threejs codes.
     setTimeout(runWindowEventLoop, 0);
 }
 
 class GPUCanvasContextMock implements GPUCanvasContext {
-    constructor(
-        private context: GPUCanvasContext,
-        private width: number,
-        private height: number,
-    ) { }
+    constructor(context: GPUCanvasContext) {
+        this.#context = context;
+    }
 
+    #context: GPUCanvasContext;
     #configuration?: GPUCanvasConfiguration;
-    #currentTexture?: GPUTexture;
 
     configure(configuration: GPUCanvasConfiguration): undefined {
         // WORKAROUND: Error: Surface is not configured for presentation
@@ -537,30 +524,28 @@ class GPUCanvasContextMock implements GPUCanvasContext {
         if (configuration.alphaMode === "premultiplied") {
             delete configuration.alphaMode;
         }
-        this.context.configure(configuration);
+        this.#context.configure(configuration);
         this.#configuration = { ...configuration };
     }
 
     getCurrentTexture(): GPUTexture {
         currentTextureGot = true;
-        return this.context.getCurrentTexture();
+        return this.#context.getCurrentTexture();
     }
 
     unconfigure(): undefined {
-        this.context.unconfigure();
+        this.#context.unconfigure();
+        this.#configuration = undefined;
     }
 
-    _resize(width: number, height: number) {
-        this.width = width;
-        this.height = height;
-        if (!this.#configuration)
-            return;
-        contextMock.context.configure(this.#configuration);
+    _reconfigure() {
+        if (this.#configuration) {
+            this.#context.configure(this.#configuration);
+        }
     }
 
     _setContext(context: GPUCanvasContext) {
-        this.context = context;
-        this.context.configure(this.#configuration!);
+        this.#context = context;
     }
 }
 
