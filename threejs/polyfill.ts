@@ -87,6 +87,8 @@ const _ignoredEvents = [
 class CanvasDomMock extends EventTarget {
     style = {}
 
+    nodeName = 'canvas';
+
     get clientHeight() {
         return this.height;
     }
@@ -209,6 +211,7 @@ export async function runWindowEventLoop() {
             evt.buttons = button0;
             canvasDomMock.dispatchEvent(evt);
             (window).dispatchEvent(evt);
+            (globalThis as any).document.body.dispatchEvent(evt);
         } else if (event.type == EventType.MouseWheel) {
             const evt = new WheelEvent(event.x * 120, event.y * 120);
             setMouseEventXY(evt, lastMoveMouseEvent!.x, lastMoveMouseEvent!.y);
@@ -475,9 +478,21 @@ let canvasCount = 0;
         }
     },
 
-    body: {
-        appendChild() { }
-    }
+    body: (() => {
+        const body: any = new EventTarget();
+        body.appendChild = (n: any) => {
+            const nodeName = n.nodeName;
+            if (!["canvas"].includes(nodeName)) {
+                console.info(`document.body.appendChild("${nodeName}")`);
+            }
+        };
+        body.addEventListener = function (event: string, _listener: any, _options: any) {
+            console.log(`document.body.addEventListener("${event}")`);
+            EventTarget.prototype.addEventListener.call(this, event, _listener, _options);
+        };
+        body.style = {}
+        return body;
+    })(),
 };
 
 (window as any).innerWidth = INIT_WIDTH;
@@ -486,14 +501,15 @@ let canvasCount = 0;
 (window as any).devicePixelRatio = 1;
 
 // TODO: We need to compose events better ...
-const window_addEventListener_origin = (window).addEventListener;
 (window).addEventListener = (event: string, _listener: any, _options: any) => {
-    console.log(`window.addEventListener("${event}", ...)`);
+    if (!["resize"].includes(event)) {
+        console.log(`window.addEventListener("${event}", ...)`);
+    }
     if (event === "mousemove" || event === "pointermove") {
-        window_addEventListener_origin.call(window, "pointermove", _listener, _options);
+        EventTarget.prototype.addEventListener.call(window, "pointermove", _listener, _options);
     }
     else if (event === "resize") {
-        window_addEventListener_origin.call(window, "resize", _listener, _options);
+        EventTarget.prototype.addEventListener.call(window, "resize", _listener, _options);
     }
 };
 

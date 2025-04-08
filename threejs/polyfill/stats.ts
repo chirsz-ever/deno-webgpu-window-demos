@@ -6,6 +6,7 @@ export default class Stats {
     end() { }
 
     dom = {
-        style: {}
+        style: {},
+        nodeName: "div#stats"
     }
 }
