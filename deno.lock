@@ -143,6 +143,7 @@
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/RGBELoader.js": "2ef20a56228ff90b628b0b85d44e833ba4a886d4fe343be340384e453fbfe10a",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/RGBMLoader.js": "1d28f49206befa0e574bdcfc0d7c7ae0e21838a2620598d9b608cb4b912d6cdf",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/math/ColorSpaces.js": "0d38cd31d6650232d3b1161e1d6ccba9cdec5d6e044c6a5c67bd50bbe79dd96e",
+    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/math/SimplexNoise.js": "6e92fa66c146a2e423d47023bbb9bafd4481714abed866bf6b447fdd9f55e2d8",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/textures/FlakesTexture.js": "f602c8c1ea0584bb1d5f79eff79a54eab2b3adde30fee6a68d98d3f82a20624c",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/AfterImageNode.js": "d4bc302701ac02d52762c598a992391abba9d59dbfebc04e74da3ad6c79b7fb3",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/AnamorphicNode.js": "b78ba13efd2234123b4e5bcedc8b8abf1e50180de22ee901fb5c5bc4835c5187",
