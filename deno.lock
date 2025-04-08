@@ -150,6 +150,7 @@
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/hashBlur.js": "f7431c5ce53e3fafec712a27e4b223afe73122213267ad88748972d536394c78",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/BufferGeometryUtils.js": "f20050ae2eeea7cf6ef05775bf68d6de3aeffbaff362760edd8a9de9ac8500ca",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/GeometryUtils.js": "b9011c1fc0059af7428c9752223355e2070f4a93f37e267b3d2229ecfb221640",
+    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/SkeletonUtils.js": "8c8b79ecbcdbf658d4d2626906dea249166165c47f7158c34d255deac63b4ec2",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/WorkerPool.js": "60e6947167c8848565129c8e383585cff6812c7930098183012774ed2d01fc73",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.Core.js": "24fa17158ca447075da9e39e0a1d70ea185d0d10f17491aadb7d32285a4eb251",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.Legacy.js": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
