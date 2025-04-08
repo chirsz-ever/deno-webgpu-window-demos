@@ -20,6 +20,18 @@ import { WebGPURenderer } from "three";
 import { DOMParser } from "npm:linkedom@0.18.4";
 (globalThis as any).DOMParser = DOMParser;
 
+// Deno 1.x has `window`, no `process`, be treated as web broswer environment.
+// Deno 2.x has no `window`, but has `process`, be treated as Node.js environment.
+//   but Deno 2.x does not have `require` ...
+import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
+{
+    const fn = KTX2Loader.BasisWorker.toString();
+    const newFn = fn.substring(0, fn.lastIndexOf('}')) +
+        ';delete globalThis.process;' +
+        fn.substring(fn.lastIndexOf('}'));
+    (KTX2Loader as any).BasisWorker = newFn;
+}
+
 const INIT_WIDTH = 1000;
 const INIT_HEIGHT = 750;
 
@@ -234,7 +246,6 @@ export async function runWindowEventLoop() {
                     callback!(t);
                 }
 
-                // TODO: maybe now we donot need currentTextureGot
                 if (currentTextureGot) {
                     surface.present();
                     currentTextureGot = false;
