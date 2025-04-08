@@ -195,21 +195,25 @@ export async function runWindowEventLoop() {
             evt.buttons = 1;
             button0 = 1;
             canvasDomMock.dispatchEvent(evt);
+            (window).dispatchEvent(evt);
         } else if (event.type == EventType.MouseButtonUp) {
             const evt = new MouseEvent("pointerup");
             setMouseEventXY(evt, event.x, event.y);
             evt.buttons = 0;
             button0 = 0;
             canvasDomMock.dispatchEvent(evt);
+            (window).dispatchEvent(evt);
         } else if (event.type == EventType.MouseMotion) {
             const evt = new MouseEvent("pointermove");
             setMouseEventXY(evt, event.x, event.y, true);
             evt.buttons = button0;
             canvasDomMock.dispatchEvent(evt);
+            (window).dispatchEvent(evt);
         } else if (event.type == EventType.MouseWheel) {
             const evt = new WheelEvent(event.x * 120, event.y * 120);
             setMouseEventXY(evt, lastMoveMouseEvent!.x, lastMoveMouseEvent!.y);
             canvasDomMock.dispatchEvent(evt);
+            (window).dispatchEvent(evt);
         }
         else if (event.type === EventType.WindowEvent) {
             switch (event.event) {
@@ -480,6 +484,18 @@ let canvasCount = 0;
 (window as any).innerHeight = INIT_HEIGHT;
 // TODO: Retina Display?
 (window as any).devicePixelRatio = 1;
+
+// TODO: We need to compose events better ...
+const window_addEventListener_origin = (window).addEventListener;
+(window).addEventListener = (event: string, _listener: any, _options: any) => {
+    console.log(`window.addEventListener("${event}", ...)`);
+    if (event === "mousemove" || event === "pointermove") {
+        window_addEventListener_origin.call(window, "pointermove", _listener, _options);
+    }
+    else if (event === "resize") {
+        window_addEventListener_origin.call(window, "resize", _listener, _options);
+    }
+};
 
 class WorkerMock extends Worker {
     constructor(specifier: string | URL, options?: WorkerOptions) {
