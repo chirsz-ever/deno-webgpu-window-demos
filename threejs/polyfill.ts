@@ -744,7 +744,7 @@ async function loadImageData(data: ArrayBuffer): Promise<ImageData> {
     throw new Error("cannot load image data");
 }
 
-const reIlligalCast = /[ui]32\(\s*([\d.]+)\s*\)/g;
+const reIlligalCast = /[ui]32\(\s*([\d.]+)u?\s*\)/g;
 // FIXME
 const patEnableSubgroup = 'enable subgroups;';
 
