@@ -1,4 +1,4 @@
-// deno-lint-ignore-file no-explicit-any require-await
+// deno-lint-ignore-file no-explicit-any
 
 import { join, dirname } from "jsr:@std/path@1.0"
 import * as fs from "jsr:@std/fs@1.0"
@@ -11,8 +11,6 @@ import {
     getKeyName,
     Window as SDLWindow,
 } from "deno_sdl2";
-
-import { GPUFeatureName as gpu_feature_names } from 'three/src/renderers/webgpu/utils/WebGPUConstants.js';
 
 // for load MaterialX
 import { DOMParser, HTMLElement, HTMLImageElement, parseHTML } from "npm:linkedom@0.18.4";
@@ -490,15 +488,6 @@ export async function init(title: string) {
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) {
         throw new Error(`init WebGPU failed: adapter is ${adapter}`);
-    }
-
-    // feature support
-    const features: GPUFeatureName[] = Object.values(gpu_feature_names) as GPUFeatureName[];
-    const supportedFeatures: GPUFeatureName[] = [];
-    for (const name of features) {
-        if (adapter.features.has(name)) {
-            supportedFeatures.push(name);
-        }
     }
 
     const width = INIT_WIDTH;
