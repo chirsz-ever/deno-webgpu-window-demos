@@ -120,17 +120,21 @@ class CanvasDomMock extends HTMLElement {
     }
 }
 
-let lastMoveMouseEvent: MouseEvent | null = null;
+let lastMousePos: undefined | { x: number, y: number };
 
 function setMouseEventXY(evt: MouseEvent, x: number, y: number, isMove = false) {
     evt.pageX = evt.offsetX = evt.screenX = evt.clientX = evt.x = x;
     evt.pageY = evt.offsetY = evt.screenY = evt.clientY = evt.y = y;
 
-    evt.movementX = lastMoveMouseEvent ? evt.screenX - lastMoveMouseEvent.screenX : 0;
-    evt.movementY = lastMoveMouseEvent ? evt.screenY - lastMoveMouseEvent.screenY : 0;
+    evt.movementX = lastMousePos ? evt.screenX - lastMousePos.x : 0;
+    evt.movementY = lastMousePos ? evt.screenY - lastMousePos.y : 0;
 
     if (isMove) {
-        lastMoveMouseEvent = evt;
+        if (!lastMousePos) {
+            lastMousePos = { x: evt.screenX, y: evt.screenY };
+        }
+        lastMousePos.x = evt.screenX;
+        lastMousePos.y = evt.screenY;
     }
 }
 
@@ -171,15 +175,17 @@ let currentTextureGot = false;
 
 // disapth both mouse/pointer events
 function dispatchPointerEvent(typ: string, x: number, y: number, buttons: number) {
-    let evt = new MouseEvent("pointer" + typ);
-    setMouseEventXY(evt, x, y);
-    evt.buttons = buttons;
-    canvasDomMock.dispatchEvent(evt);
+    const evtP = new MouseEvent("pointer" + typ);
+    setMouseEventXY(evtP, x, y, typ === "move");
+    evtP.buttons = buttons;
+    canvasDomMock.dispatchEvent(evtP);
 
-    evt = new MouseEvent("mouse" + typ);
-    setMouseEventXY(evt, x, y);
-    evt.buttons = buttons;
-    canvasDomMock.dispatchEvent(evt);
+    const evtM = new MouseEvent("mouse" + typ);
+    setMouseEventXY(evtM, x, y);
+    evtM.movementX = evtP.movementX;
+    evtM.movementY = evtP.movementY;
+    evtM.buttons = buttons;
+    canvasDomMock.dispatchEvent(evtM);
 }
 
 export async function runWindowEventLoop() {
@@ -206,7 +212,7 @@ export async function runWindowEventLoop() {
             evt.deltaX = event.x * 120;
             evt.deltaY = event.y * 120;
             evt.deltaMode = evt.DOM_DELTA_PIXEL;
-            setMouseEventXY(evt, lastMoveMouseEvent!.x, lastMoveMouseEvent!.y);
+            setMouseEventXY(evt, lastMousePos?.x ?? 0, lastMousePos?.y ?? 0);
             canvasDomMock.dispatchEvent(evt);
         }
         else if (event.type === EventType.WindowEvent) {
@@ -443,10 +449,10 @@ document.createElementNS = function createElementNS(_namespaceURI: string, quali
     throw new Error(`Not support to create <${qualifiedName}>`);
 };
 
-document.createElement = function createElement(tagName: string) {
-    // console.log(`document.createElement("${tagName}")`)
-    return Object.getPrototypeOf(document).createElement.apply(this, arguments);
-};
+// document.createElement = function createElement(tagName: string) {
+//     // console.log(`document.createElement("${tagName}")`)
+//     return Object.getPrototypeOf(document).createElement.apply(this, arguments);
+// };
 
 document.getElementById = function getElementById(id: string) {
     console.log(`document.getElementById("${id}")`)
