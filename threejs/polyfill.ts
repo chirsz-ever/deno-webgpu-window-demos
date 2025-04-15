@@ -89,15 +89,7 @@ const _ignoredEvents = [
 ];
 
 class CanvasDomMock extends HTMLElement {
-    get clientHeight() {
-        return this.height;
-    }
-
-    get clientWidth() {
-        return this.width;
-    }
-
-    constructor(private surface: Deno.UnsafeWindowSurface, private width: number, private height: number) {
+    constructor(private surface: Deno.UnsafeWindowSurface) {
         super(document, 'canvas');
     }
 
@@ -109,14 +101,6 @@ class CanvasDomMock extends HTMLElement {
         const context = this.surface.getContext(name);
         currentContextMock = new GPUCanvasContextMock(context);
         return currentContextMock;
-    }
-
-    setPointerCapture() {
-        // console.info(`canvas.setPointerCapture()`);
-    }
-
-    releasePointerCapture() {
-        // console.info(`canvas.releasePointerCapture()`);
     }
 }
 
@@ -143,7 +127,6 @@ let currentContextMock: GPUCanvasContextMock | undefined;
 
 // make Three.js always use our mocked objects
 WebGPURenderer.prototype.init = async function init() {
-    this.backend.parameters.canvas = canvasDomMock;
     return Object.getPrototypeOf(WebGPURenderer.prototype).init.call(this).then((renderer: WebGPURenderer) => {
         currentDevice = this.backend.device;
         return renderer;
@@ -460,15 +443,33 @@ document.getElementById = function getElementById(id: string) {
     if (!elm) {
         elm = document.createElement('div')
         elm.id = id;
-        // FIXME: linkedom bug? cannot set innerHTML with number
-        Object.defineProperty(elm, 'innerHTML', {
-            set() {
-                // do nothing
-            }
-        });
     }
     return elm;
 };
+
+// FIXME: linkedom bug? cannot set innerHTML with number
+Object.defineProperty(HTMLElement.prototype, 'innerHTML', {
+    set() {
+        // do nothing
+    }
+});
+
+// linkedom do not support these methods
+(HTMLElement.prototype as any).setPointerCapture = function setPointerCapture() {
+    // console.info(`canvas.setPointerCapture()`);
+};
+
+(HTMLElement.prototype as any).releasePointerCapture = function releasePointerCapture() {
+    // console.info(`canvas.releasePointerCapture()`);
+};
+
+Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+    get: () => (window as any).innerHeight,
+});
+
+Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+    get: () => (window as any).innerWidth,
+});
 
 (window as any).innerWidth = INIT_WIDTH;
 (window as any).innerHeight = INIT_HEIGHT;
@@ -509,7 +510,7 @@ export async function init(title: string) {
     win = new WindowBuilder(title, width, height).resizable().build();
     surface = win.windowSurface(width, height);
 
-    canvasDomMock = new CanvasDomMock(surface, width, height);
+    canvasDomMock = new CanvasDomMock(surface);
 
     // FIXME?: runWindowEventLoop must run after threejs codes.
     setTimeout(runWindowEventLoop, 0);
