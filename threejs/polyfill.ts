@@ -17,8 +17,12 @@ import { GPUFeatureName as gpu_feature_names } from 'three/src/renderers/webgpu/
 import { WebGPURenderer } from "three";
 
 // for load MaterialX
-import { DOMParser } from "npm:linkedom@0.18.4";
+import { DOMParser, HTMLElement, HTMLImageElement, parseHTML } from "npm:linkedom@0.18.4";
 (globalThis as any).DOMParser = DOMParser;
+
+const htmlPage = parseHTML('<!DOCTYPE html><html><head></head><body></body></html>');
+const window = htmlPage.window;
+const Event = htmlPage.Event;
 
 // Deno 1.x has `window`, no `process`, be treated as web broswer environment.
 // Deno 2.x has no `window`, but has `process`, be treated as Node.js environment.
@@ -58,24 +62,24 @@ class MouseEvent extends Event {
     x: number = 0;
     y: number = 0;
 
-    constructor(name: string, options?: EventInit) {
-        super(name, options)
+    // TODO: options
+    constructor(name: string, _options?: undefined) {
+        super(name, { bubbles: true })
     }
 }
 
 class WheelEvent extends MouseEvent {
     deltaMode: number;
-    deltaX: number;
-    deltaY: number;
+    deltaX: number = 0;
+    deltaY: number = 0;
     deltaZ: number = 0;
     DOM_DELTA_PIXEL = 0x00;
     DOM_DELTA_LINE = 0x01;
     DOM_DELTA_PAGE = 0x02;
 
-    constructor(deltaX: number, deltaY: number) {
-        super("wheel");
-        this.deltaX = deltaX;
-        this.deltaY = deltaY;
+    // TODO: options
+    constructor(name: string, _options?: undefined) {
+        super(name, _options);
         this.deltaMode = this.DOM_DELTA_PIXEL;
     }
 }
@@ -84,11 +88,7 @@ const _ignoredEvents = [
     "pointerdown", "pointermove", "pointerup", "wheel"
 ];
 
-class CanvasDomMock extends EventTarget {
-    style = {}
-
-    nodeName = 'canvas';
-
+class CanvasDomMock extends HTMLElement {
     get clientHeight() {
         return this.height;
     }
@@ -98,18 +98,7 @@ class CanvasDomMock extends EventTarget {
     }
 
     constructor(private surface: Deno.UnsafeWindowSurface, private width: number, private height: number) {
-        super();
-    }
-
-    override addEventListener(event: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions) {
-        super.addEventListener(event, listener, options);
-        // if (!_ignoredEvents.includes(event))
-        //     console.info(`canvas.addEventListener("${event}", ...)`)
-    }
-
-    getRootNode() {
-        // console.info(`canvas.getRootNode()`);
-        return this;
+        super(document, 'canvas');
     }
 
     getContext(name: string) {
@@ -180,6 +169,19 @@ let button0 = 0;
 // avoid preset twice
 let currentTextureGot = false;
 
+// disapth both mouse/pointer events
+function dispatchPointerEvent(typ: string, x: number, y: number, buttons: number) {
+    let evt = new MouseEvent("pointer" + typ);
+    setMouseEventXY(evt, x, y);
+    evt.buttons = buttons;
+    canvasDomMock.dispatchEvent(evt);
+
+    evt = new MouseEvent("mouse" + typ);
+    setMouseEventXY(evt, x, y);
+    evt.buttons = buttons;
+    canvasDomMock.dispatchEvent(evt);
+}
+
 export async function runWindowEventLoop() {
     // TODO: Handle keyboard events
     for await (const event of win.events()) {
@@ -192,31 +194,20 @@ export async function runWindowEventLoop() {
                 Deno.exit(1)
             }
         } else if (event.type == EventType.MouseButtonDown) {
-            const evt = new MouseEvent("pointerdown");
-            setMouseEventXY(evt, event.x, event.y);
-            evt.buttons = 1;
+            dispatchPointerEvent("down", event.x, event.y, 1);
             button0 = 1;
-            canvasDomMock.dispatchEvent(evt);
-            (window).dispatchEvent(evt);
         } else if (event.type == EventType.MouseButtonUp) {
-            const evt = new MouseEvent("pointerup");
-            setMouseEventXY(evt, event.x, event.y);
-            evt.buttons = 0;
+            dispatchPointerEvent("up", event.x, event.y, 0);
             button0 = 0;
-            canvasDomMock.dispatchEvent(evt);
-            (window).dispatchEvent(evt);
         } else if (event.type == EventType.MouseMotion) {
-            const evt = new MouseEvent("pointermove");
-            setMouseEventXY(evt, event.x, event.y, true);
-            evt.buttons = button0;
-            canvasDomMock.dispatchEvent(evt);
-            (window).dispatchEvent(evt);
-            (globalThis as any).document.body.dispatchEvent(evt);
+            dispatchPointerEvent("move", event.x, event.y, button0);
         } else if (event.type == EventType.MouseWheel) {
-            const evt = new WheelEvent(event.x * 120, event.y * 120);
+            const evt = new WheelEvent("wheel");
+            evt.deltaX = event.x * 120;
+            evt.deltaY = event.y * 120;
+            evt.deltaMode = evt.DOM_DELTA_PIXEL;
             setMouseEventXY(evt, lastMoveMouseEvent!.x, lastMoveMouseEvent!.y);
             canvasDomMock.dispatchEvent(evt);
-            (window).dispatchEvent(evt);
         }
         else if (event.type === EventType.WindowEvent) {
             switch (event.event) {
@@ -277,7 +268,7 @@ export async function runWindowEventLoop() {
 
 // window global is not available in Deno 2
 if (typeof globalThis.window === 'undefined') {
-    (globalThis as any).window = new EventTarget();
+    (globalThis as any).window = window;
 }
 
 // you can also use `--location` argument, for example
@@ -404,14 +395,22 @@ const _log_handler = {
 };
 
 // deno do not support HTMLImageElement
-class Image extends EventTarget {
-    nodeType = 1;
-    width = 0;
-    height = 0;
+class Image extends HTMLImageElement {
     _imageData: ImageData | undefined;
 
-    set src(uri: string) {
+    constructor(width?: number, height?: number) {
+        super(document, "img");
+        if (width !== undefined) {
+            super.width = width;
+        }
+        if (height !== undefined) {
+            super.height = height;
+        }
+    }
+
+    override set src(uri: string) {
         // console.log(`loading ${uri}`);
+        super.src = uri;
         (async () => {
             const data = await (await fetch(uri)).arrayBuffer();
             const imageData = await loadImageData(data);
@@ -422,96 +421,53 @@ class Image extends EventTarget {
             this.dispatchEvent(event);
         })();
     }
-
-    getRootNode() {
-        return this;
-    }
-
-    parentNode() {
-        return this;
-    }
 }
 
-class ElementMock extends EventTarget {
-    style = {}
-    appendChild(_target?: EventTarget) {
-        // TODO: bubble events
-    }
-    getRootNode() {
-        return this;
-    }
-}
+// deno do not support document
+const document = (globalThis as any).document = (htmlPage as any).document;
 
 let canvasCount = 0;
 
-// deno do not support document
-(globalThis as any).document = {
-    createElementNS(_namespaceURI: string, qualifiedName: string) {
-        if (qualifiedName === "img") {
-            // return new Proxy(new Image(), _log_handler);
-            return new Image();
-        } else if (qualifiedName === "canvas") {
-            canvasCount += 1;
-            if (canvasCount > 1) {
-                throw new Error("create too many <canvas>");
-            }
-            return canvasDomMock;
+document.createElementNS = function createElementNS(_namespaceURI: string, qualifiedName: string) {
+    if (qualifiedName === "img") {
+        // return new Proxy(new Image(), _log_handler);
+        return new Image();
+    } else if (qualifiedName === "canvas") {
+        canvasCount += 1;
+        if (canvasCount > 1) {
+            throw new Error("create too many <canvas>");
         }
+        return canvasDomMock;
+    }
 
-        throw new Error(`Not support to create <${qualifiedName}>`);
-    },
+    throw new Error(`Not support to create <${qualifiedName}>`);
+};
 
-    createElement(name: string) {
-        console.log(`document.createElement("${name}")`)
-        return new ElementMock();
-    },
+document.createElement = function createElement(tagName: string) {
+    // console.log(`document.createElement("${tagName}")`)
+    return Object.getPrototypeOf(document).createElement.apply(this, arguments);
+};
 
-    getElementById(id: string) {
-        console.log(`document.getElementById("${id}")`)
-        return new ElementMock();
-    },
-
-    addEventListener(event: string, _listener: any, _options: any) {
-        console.log(`document.addEventListener("${event}", ...)`);
-        if (event == "mousemove") {
-            canvasDomMock.addEventListener("pointermove", _listener, _options);
-        }
-    },
-
-    body: (() => {
-        const body: any = new EventTarget();
-        body.appendChild = (n: any) => {
-            const nodeName = n.nodeName;
-            if (!["canvas"].includes(nodeName)) {
-                console.info(`document.body.appendChild("${nodeName}")`);
+document.getElementById = function getElementById(id: string) {
+    console.log(`document.getElementById("${id}")`)
+    let elm = Object.getPrototypeOf(document).getElementById.apply(this, arguments);
+    if (!elm) {
+        elm = document.createElement('div')
+        elm.id = id;
+        // FIXME: linkedom bug? cannot set innerHTML with number
+        Object.defineProperty(elm, 'innerHTML', {
+            set() {
+                // do nothing
             }
-        };
-        body.addEventListener = function (event: string, _listener: any, _options: any) {
-            console.log(`document.body.addEventListener("${event}")`);
-            EventTarget.prototype.addEventListener.call(this, event, _listener, _options);
-        };
-        body.style = {}
-        return body;
-    })(),
+        });
+    }
+    return elm;
 };
 
 (window as any).innerWidth = INIT_WIDTH;
 (window as any).innerHeight = INIT_HEIGHT;
 // TODO: Retina Display?
 (window as any).devicePixelRatio = 1;
-
-// TODO: We need to compose events better ...
-(window).addEventListener = (event: string, _listener: any, _options: any) => {
-    if (!["resize"].includes(event)) {
-        console.log(`window.addEventListener("${event}", ...)`);
-    }
-    if (event === "mousemove" || event === "pointermove") {
-        EventTarget.prototype.addEventListener.call(window, "pointermove", _listener, _options);
-    }
-    else if (event === "resize") {
-        EventTarget.prototype.addEventListener.call(window, "resize", _listener, _options);
-    }
-};
 
 class WorkerMock extends Worker {
     constructor(specifier: string | URL, options?: WorkerOptions) {
@@ -593,8 +549,6 @@ class GPUCanvasContextMock implements GPUCanvasContext {
 }
 
 // TypeScript definitions for WebGPU: https://github.com/gpuweb/types/blob/main/dist/index.d.ts
-
-type HTMLImageElement = Image;
 
 type GPUImageCopyExternalImageSource =
     | ImageBitmap
