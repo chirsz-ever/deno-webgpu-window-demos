@@ -166,7 +166,7 @@ function sleep(timeout: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, timeout))
 }
 
-const VALIDATION = Deno.args[0] == "--enable-validation";
+const VALIDATION = !Deno.args.includes("--disable-validation");
 
 let button0 = 0;
 
