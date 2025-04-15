@@ -14,8 +14,6 @@ import {
 
 import { GPUFeatureName as gpu_feature_names } from 'three/src/renderers/webgpu/utils/WebGPUConstants.js';
 
-import { WebGPURenderer } from "three";
-
 // for load MaterialX
 import { DOMParser, HTMLElement, HTMLImageElement, parseHTML } from "npm:linkedom@0.18.4";
 (globalThis as any).DOMParser = DOMParser;
@@ -125,13 +123,12 @@ function setMouseEventXY(evt: MouseEvent, x: number, y: number, isMove = false) 
 let currentDevice: GPUDevice | undefined;
 let currentContextMock: GPUCanvasContextMock | undefined;
 
-// make Three.js always use our mocked objects
-WebGPURenderer.prototype.init = async function init() {
-    return Object.getPrototypeOf(WebGPURenderer.prototype).init.call(this).then((renderer: WebGPURenderer) => {
-        currentDevice = this.backend.device;
-        return renderer;
-    });
-}
+const GPUAdapter_requestDevice_origin = GPUAdapter.prototype.requestDevice;
+GPUAdapter.prototype.requestDevice = async function requestDevice(descriptor?: GPUDeviceDescriptor) {
+    const device = await GPUAdapter_requestDevice_origin.call(this, descriptor);
+    currentDevice = device;
+    return device;
+};
 
 let win: SDLWindow;
 let surface: Deno.UnsafeWindowSurface;
