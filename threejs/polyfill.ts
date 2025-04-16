@@ -445,7 +445,7 @@ document.createElement = function createElement(tagName: string) {
 };
 
 document.getElementById = function getElementById(id: string) {
-    console.log(`document.getElementById("${id}")`)
+    // console.log(`document.getElementById("${id}")`)
     let elm = Object.getPrototypeOf(document).getElementById.apply(this, arguments);
     if (!elm) {
         elm = document.createElement('div')
@@ -455,10 +455,10 @@ document.getElementById = function getElementById(id: string) {
 };
 
 // FIXME: linkedom bug? cannot set innerHTML with number
-Object.defineProperty(HTMLElement.prototype, 'innerHTML', {
-    set() {
-        // do nothing
-    }
+Object.defineProperties(HTMLElement.prototype, {
+    // do nothing
+    innerHTML: { set() { } },
+    innerText: { set() { } },
 });
 
 // linkedom do not support these methods
