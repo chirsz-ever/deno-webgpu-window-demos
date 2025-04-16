@@ -427,10 +427,21 @@ document.createElementNS = function createElementNS(_namespaceURI: string, quali
     throw new Error(`Not support to create <${qualifiedName}>`);
 };
 
-// document.createElement = function createElement(tagName: string) {
-//     // console.log(`document.createElement("${tagName}")`)
-//     return Object.getPrototypeOf(document).createElement.apply(this, arguments);
-// };
+document.createElement = function createElement(tagName: string) {
+    if (tagName === "img") {
+        return new Image();
+    } else if (tagName === "canvas") {
+        canvasCount += 1;
+        if (canvasCount > 1) {
+            throw new Error("create too many <canvas>");
+        }
+        return canvasDomMock;
+    }
+    if (tagName !== 'div') {
+        console.log(`document.createElement("${tagName}")`)
+    }
+    return Object.getPrototypeOf(document).createElement.apply(this, arguments);
+};
 
 document.getElementById = function getElementById(id: string) {
     console.log(`document.getElementById("${id}")`)
