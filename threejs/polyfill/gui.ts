@@ -46,4 +46,7 @@ class Item {
     listen() {
         return this;
     }
+    setValue() {
+        return this;
+    }
 }
