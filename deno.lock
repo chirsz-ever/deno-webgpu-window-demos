@@ -6,7 +6,8 @@
     "jsr:@std/path@1.0": "1.0.8",
     "jsr:@std/path@^1.0.8": "1.0.8",
     "npm:gifuct-js@2.1.2": "2.1.2",
-    "npm:linkedom@0.18.4": "0.18.4"
+    "npm:linkedom@0.18.4": "0.18.4",
+    "npm:webp-wasm@*": "1.0.6"
   },
   "jsr": {
     "@divy/sdl2@0.14.0": {
@@ -109,6 +110,9 @@
     },
     "uhyphen@0.2.0": {
       "integrity": "sha512-qz3o9CHXmJJPGBdqzab7qAYuW8kQGKNEuoHFYrBwV6hWIMcpAmxDLXojcHfFr9US1Pe6zUswEIJIbLI610fuqA=="
+    },
+    "webp-wasm@1.0.6": {
+      "integrity": "sha512-RqBXDs/pwLc4dCChFfOw9FvBULRW6o/XGKMSbkWaPuTVtQ0oQx12A/k0rtiKF9fSsb9dxzOFGT7kE2R3jxMszA=="
     }
   },
   "redirects": {
@@ -118,6 +122,7 @@
   "remote": {
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/capabilities/WebGPU.js": "f7819ce6b1e787eb2b18c0eb52213eb8873d7d6983d4e7f7365fb33cb0d68445",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/controls/OrbitControls.js": "5d7c52f599864315c6e34af1262e39553fa1e1ad1e30066461be780c89a65690",
+    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/controls/TransformControls.js": "6f6acf44f5c77003c133c68b04beced28dd9f3d17c14d16f11f4ce62367e81e4",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/curves/NURBSCurve.js": "803e98f7f7672177ba5ccede254983bb4ca7fad76cea7fe8470cd5212a6f9015",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/curves/NURBSUtils.js": "5b417d371ea9e813e7302a7bf3018c6c7f6b5bb0c6a23c561410288fe46f2583",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/environments/RoomEnvironment.js": "63fd610230e0ae59b757c451cd60776d03ac6cb9e5499c637052f4e1c6fa6808",
@@ -154,6 +159,9 @@
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/RGBMLoader.js": "1d28f49206befa0e574bdcfc0d7c7ae0e21838a2620598d9b608cb4b912d6cdf",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/math/ColorSpaces.js": "0d38cd31d6650232d3b1161e1d6ccba9cdec5d6e044c6a5c67bd50bbe79dd96e",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/math/SimplexNoise.js": "6e92fa66c146a2e423d47023bbb9bafd4481714abed866bf6b447fdd9f55e2d8",
+    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/modifiers/CurveModifierGPU.js": "76cfea6168f00e139de88b55eaed956262e3798e04f85bddac0631fe4413401b",
+    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/objects/SkyMesh.js": "8e3748a26c22e325424c1bde0b24363aceabaa3cfe0e50ea1de9233ed5774457",
+    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/objects/WaterMesh.js": "c7270b7cafbaaffbcfd91e8fd042244e17dfe89ede8ad616086ddbabbfcc5968",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/textures/FlakesTexture.js": "f602c8c1ea0584bb1d5f79eff79a54eab2b3adde30fee6a68d98d3f82a20624c",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/AfterImageNode.js": "d4bc302701ac02d52762c598a992391abba9d59dbfebc04e74da3ad6c79b7fb3",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/AnamorphicNode.js": "b78ba13efd2234123b4e5bcedc8b8abf1e50180de22ee901fb5c5bc4835c5187",
@@ -165,6 +173,7 @@
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/BufferGeometryUtils.js": "f20050ae2eeea7cf6ef05775bf68d6de3aeffbaff362760edd8a9de9ac8500ca",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/GeometryUtils.js": "b9011c1fc0059af7428c9752223355e2070f4a93f37e267b3d2229ecfb221640",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/SkeletonUtils.js": "8c8b79ecbcdbf658d4d2626906dea249166165c47f7158c34d255deac63b4ec2",
+    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/SortUtils.js": "d902411beb27dc091a3e7e989d4ea8acbabee38481fbd62e0f3a1ccab0a05629",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/WorkerPool.js": "60e6947167c8848565129c8e383585cff6812c7930098183012774ed2d01fc73",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.Core.js": "24fa17158ca447075da9e39e0a1d70ea185d0d10f17491aadb7d32285a4eb251",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.Legacy.js": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

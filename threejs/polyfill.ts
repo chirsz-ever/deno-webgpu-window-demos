@@ -4,6 +4,7 @@ import { join, dirname } from "jsr:@std/path@1.0"
 import * as fs from "jsr:@std/fs@1.0"
 import { getPixels } from "https://deno.land/x/get_pixels@v1.2.2/mod.ts";
 import { parseGIF, decompressFrames } from "npm:gifuct-js@2.1.2"
+import WebP from 'npm:webp-wasm';
 
 import {
     EventType,
@@ -265,12 +266,12 @@ if (!location) {
 
     // mock `fetch` API to use cache
 
-    const is_abs = function (uri: string): boolean {
-        return uri.startsWith("http:") || uri.startsWith("https:");
+    const is_relative = function (uri: string): boolean {
+        return uri.startsWith("./") || uri.startsWith("../") || !uri.match(/^\w+:/);
     };
 
     const is_cachable_url = function (uri: string): boolean {
-        return uri.startsWith(THREEJS_RES_BASE_URL) || uri.startsWith(MATERIALX_RES_BASE_URL) || !is_abs(uri);
+        return uri.startsWith(THREEJS_RES_BASE_URL) || uri.startsWith(MATERIALX_RES_BASE_URL) || is_relative(uri);
     }
 
     // FIXME?: use "examples/jsm" built in three.js instead of fetch it form "https://threejs.org/examples/jsm/".
@@ -286,14 +287,14 @@ if (!location) {
             const headers = ctype ? { "content-type": ctype } : undefined;
             return new Response(data, { status: 200, headers });
         }
-        if (!input_str.startsWith("blob:"))
+        if (input_str.startsWith("http:") || input_str.startsWith("https:"))
             console.info(`fetch(${input_str}) without cache`);
         return fetch_origin(input, init);
     };
 
     class RequestMock extends Request {
         constructor(input: RequestInfo | URL, init?: RequestInit) {
-            if (typeof input === "string" && !is_abs(input)) {
+            if (typeof input === "string" && is_relative(input)) {
                 input = new URL(input, THREEJS_RES_BASE_URL);
             }
             super(input, init);
@@ -309,7 +310,7 @@ if (!location) {
 
     const load_with_cache = async function (uri: string): Promise<ArrayBuffer> {
         // console.log(`loading ${uri}`);
-        if (uri.startsWith("blob:")) {
+        if (uri.startsWith("blob:") || uri.startsWith("data:")) {
             // BLOB URL
             const res = await fetch_origin(uri);
             if (!res.ok) {
@@ -334,12 +335,10 @@ if (!location) {
                 localPath = join(import.meta.dirname!, uri);
             }
             return load_with_cache_abs(remotePath, localPath);
-        } else if (is_abs(uri)) {
+        } else {
             // direct fetch
             console.info(`fetch ${uri} without cache`);
             return (await fetch_origin(uri)).arrayBuffer();
-        } else {
-            throw new Error(`unknow type of uri: ${uri}`);
         }
     }
 
@@ -393,7 +392,7 @@ class Image extends HTMLImageElement {
     }
 
     override set src(uri: string) {
-        // console.log(`loading ${uri}`);
+        // console.log(`Image loading ${uri}`);
         super.src = uri;
         (async () => {
             const data = await (await fetch(uri)).arrayBuffer();
@@ -406,6 +405,8 @@ class Image extends HTMLImageElement {
         })();
     }
 }
+
+(globalThis as any).Image = Image;
 
 // deno do not support document
 const document = (globalThis as any).document = (htmlPage as any).document;
@@ -675,20 +676,25 @@ function getImageBitmapData(bitmap: ImageBitmap): Uint8Array {
 
 // https://github.com/denoland/deno/issues/28723
 const createImageBitmap_origin = globalThis.createImageBitmap;
-(globalThis as any).createImageBitmap = async function (image: ImageBitmapSource, ...args: any[]) {
+(globalThis as any).createImageBitmap = async function createImageBitmap(image: ImageBitmapSource, ...args: any[]) {
     if (image instanceof Blob) {
-        if (image.type)
+        if (['image/png', 'image/jpeg', 'image/bmp', 'image/vnd.microsoft.icon'].includes(image.type))
             return createImageBitmap_origin(image, ...args);
 
         const buffer = await image.arrayBuffer();
         const u8view = new Uint8Array(buffer);
-        const ctype = is_png(u8view) ? 'image/png' : is_jpeg(u8view) ? 'image/jpeg' : is_gif(u8view) ? 'image/gif' : undefined;
+        const ctype = is_png(u8view) ? 'image/png' :
+            is_jpeg(u8view) ? 'image/jpeg' :
+                undefined;
         // console.info(`createImageBitmap: detect content-type: ${ctype}`)
-        if (!ctype)
-            return createImageBitmap_origin(image, ...args);
+        if (ctype) {
+            const newBlob = image.slice(0, image.size, ctype);
+            return createImageBitmap_origin(newBlob, ...args);
+        }
 
-        const newBlob = image.slice(0, image.size, ctype);
-        return createImageBitmap_origin(newBlob, ...args);
+        // load RGBA data by hand
+        const imgData = await loadImageData(buffer);
+        return createImageBitmap_origin(imgData, ...args);
     }
 
     return createImageBitmap_origin(image, ...args);
@@ -718,6 +724,10 @@ function is_gif(u8view: Uint8Array) {
     return startsWith(u8view, [0x47, 0x49, 0x46]);
 }
 
+function is_webp(u8view: Uint8Array) {
+    return startsWith(u8view, [0x52, 0x49, 0x46, 0x46]);
+}
+
 async function loadImageData(data: ArrayBuffer): Promise<ImageData> {
     const u8view = new Uint8Array(data);
     if (is_png(u8view) || is_jpeg(u8view)) {
@@ -729,6 +739,10 @@ async function loadImageData(data: ArrayBuffer): Promise<ImageData> {
         const frames = decompressFrames(gif, true);
         const frame0 = frames[0];
         const imgData = new ImageData(frame0.patch, frame0.dims.width, frame0.dims.height);
+        return imgData;
+    } else if (is_webp(u8view)) {
+        const img = await WebP.decode(u8view);
+        const imgData = new ImageData(new Uint8ClampedArray(img.data), img.width, img.height);
         return imgData;
     }
     throw new Error("cannot load image data");
