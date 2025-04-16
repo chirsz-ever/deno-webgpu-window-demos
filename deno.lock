@@ -127,6 +127,7 @@
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/helpers/RectAreaLightHelper.js": "accec7f31538818355089989a45e511e517898a719f89567c32b5a33121c68bc",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/fflate.module.js": "209a4412eb48ce609edb4391992a792ffcc3983d30ee7e2b0b89a8c470f3cd8a",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/ktx-parse.module.js": "34a3a68f08db30a353802c5a762c5dcd89a168a1b56567019ef4a7563ceaf4d4",
+    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/lil-gui.module.min.js": "5e31e7fc4d3a1268550b948463eabe06c7a6c03c158ccb99c78616d2c9682518",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/meshopt_decoder.module.js": "01f48524f4bac6141eaba07e94cc36e7ee56f311796fa6117c159842941b0468",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/zstddec.module.js": "5cbf818e842628a4464e748594a6deae18ceddda3c2f541e7b3a0ff5fc7611e2",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/lighting/TiledLighting.js": "6fddfcbe573e63fd82d1d730273e005b2e84b612c8ff56ddd2dc2f7ca4893ec1",
