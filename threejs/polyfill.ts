@@ -65,6 +65,14 @@ class MouseEvent extends Event {
     }
 }
 
+class PointerEvent extends MouseEvent {
+    pointerType = "mouse";
+
+    constructor(name: string, _options?: undefined) {
+        super(name, _options);
+    }
+}
+
 class WheelEvent extends MouseEvent {
     deltaMode: number;
     deltaX: number = 0;
@@ -98,6 +106,19 @@ class CanvasDomMock extends HTMLElement {
         const context = this.surface.getContext(name);
         currentContextMock = new GPUCanvasContextMock(context);
         return currentContextMock;
+    }
+
+    override getBoundingClientRect() {
+        return {
+            x: 0,
+            y: 0,
+            bottom: (window as any).innerHeight,
+            height: (window as any).innerHeight,
+            left: 0,
+            right: (window as any).innerWidth,
+            top: 0,
+            width: (window as any).innerWidth,
+        }
     }
 }
 
@@ -154,9 +175,13 @@ let currentTextureGot = false;
 
 // disapth both mouse/pointer events
 function dispatchPointerEvent(typ: string, x: number, y: number, buttons: number) {
-    const evtP = new MouseEvent("pointer" + typ);
+    const evtP = new PointerEvent("pointer" + typ);
     setMouseEventXY(evtP, x, y, typ === "move");
     evtP.buttons = buttons;
+    // https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events#determining_button_states
+    if (typ === "move") {
+        evtP.button = -1;
+    }
     canvasDomMock.dispatchEvent(evtP);
 
     const evtM = new MouseEvent("mouse" + typ);
@@ -378,8 +403,9 @@ const _log_handler = {
 };
 
 // deno do not support Image
-const Image = (globalThis as any).Image = (window as any).Image;
+(globalThis as any).Image = (window as any).Image;
 
+// implement Image.src
 const image_src_desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src")!;
 Object.defineProperty(HTMLImageElement.prototype, "src", {
     configurable: image_src_desc.configurable,
