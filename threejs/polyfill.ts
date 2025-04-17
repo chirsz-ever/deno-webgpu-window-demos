@@ -404,6 +404,10 @@ class Image extends HTMLImageElement {
             this.dispatchEvent(event);
         })();
     }
+
+    override get src() {
+        return super.src;
+    }
 }
 
 (globalThis as any).Image = Image;
