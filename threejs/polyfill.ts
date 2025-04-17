@@ -732,11 +732,43 @@ function is_webp(u8view: Uint8Array) {
     return startsWith(u8view, [0x52, 0x49, 0x46, 0x46]);
 }
 
+function createRgbaImageData(data: Uint8Array, width: number, height: number): ImageData {
+    let data_: Uint8ClampedArray;
+    switch (data.length / (width * height)) {
+        case 4:
+            data_ = new Uint8ClampedArray(data);
+            break;
+        case 3:
+            // RGB
+            data_ = new Uint8ClampedArray(width * height * 4);
+            for (let i = 0, j = 0; i < data.length; i += 3, j += 4) {
+                data_[j] = data[i];
+                data_[j + 1] = data[i + 1];
+                data_[j + 2] = data[i + 2];
+                data_[j + 3] = 255;
+            }
+            break;
+        case 1:
+            // Gray
+            data_ = new Uint8ClampedArray(width * height * 4);
+            for (let i = 0, j = 0; i < data.length; i++, j += 4) {
+                data_[j] = data[i];
+                data_[j + 1] = data[i];
+                data_[j + 2] = data[i];
+                data_[j + 3] = 255;
+            }
+            break;
+        default:
+            throw new Error(`failed to make RGBA data with length: ${data.length} width: ${width} height: ${height}`);
+    }
+    return new ImageData(data_, width, height);
+}
+
 async function loadImageData(data: ArrayBuffer): Promise<ImageData> {
     const u8view = new Uint8Array(data);
     if (is_png(u8view) || is_jpeg(u8view)) {
         const { data: image_data, width, height } = await getPixels(data);
-        const imgData = new ImageData(new Uint8ClampedArray(image_data), width, height);
+        const imgData = createRgbaImageData(image_data, width, height);
         return imgData;
     } else if (is_gif(u8view)) {
         const gif = parseGIF(data);
