@@ -350,14 +350,14 @@ if (!location) {
             if (uri.startsWith(THREEJS_RES_BASE_URL)) {
                 subpath = uri.slice(THREEJS_RES_BASE_URL.length);
                 remotePath = new URL(subpath, THREEJS_RES_BASE_URL_POLYFILL).toString();
-                localPath = join(import.meta.dirname!, subpath);
+                localPath = join(import.meta.dirname || '', subpath);
             } else if (uri.startsWith(MATERIALX_RES_BASE_URL)) {
                 subpath = uri.slice(MATERIALX_RES_BASE_URL.length);
                 remotePath = new URL(subpath, MATERIALX_RES_BASE_URL_POLYFILL).toString();
-                localPath = join(import.meta.dirname!, "materialx", subpath);
+                localPath = join(import.meta.dirname || '', "materialx", subpath);
             } else {
                 remotePath = new URL(uri, THREEJS_RES_BASE_URL_POLYFILL).toString();
-                localPath = join(import.meta.dirname!, uri);
+                localPath = join(import.meta.dirname || '', uri);
             }
             return load_with_cache_abs(remotePath, localPath);
         } else {
