@@ -450,6 +450,10 @@ document.createElement = function createElement(tagName: string) {
 
 document.getElementById = function getElementById(id: string) {
     // console.log(`document.getElementById("${id}")`)
+    // HACK for webgpu_tsl_interoperability
+    if (id === 'c') {
+        return canvasDomMock;
+    }
     let elm = Object.getPrototypeOf(document).getElementById.apply(this, arguments);
     if (!elm) {
         elm = document.createElement('div')
