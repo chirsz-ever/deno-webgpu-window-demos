@@ -667,6 +667,10 @@ function getImageBitmapData(bitmap: ImageBitmap): Uint8Array {
     return (bitmap as any)[s_data]
 }
 
+// Error: This operation is currently not supported
+// for webgpu_occlusion
+GPUQuerySet.prototype.destroy = () => {};
+
 // https://github.com/denoland/deno/issues/28723
 const createImageBitmap_origin = globalThis.createImageBitmap;
 (globalThis as any).createImageBitmap = async function createImageBitmap(image: ImageBitmapSource, ...args: any[]) {
