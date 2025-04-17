@@ -377,23 +377,17 @@ const _log_handler = {
     },
 };
 
-// deno do not support HTMLImageElement
-class Image extends HTMLImageElement {
-    _imageData: ImageData | undefined;
+// deno do not support Image
+const Image = (globalThis as any).Image = (window as any).Image;
 
-    constructor(width?: number, height?: number) {
-        super(document, "img");
-        if (width !== undefined) {
-            super.width = width;
-        }
-        if (height !== undefined) {
-            super.height = height;
-        }
-    }
-
-    override set src(uri: string) {
+const image_src_desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src")!;
+Object.defineProperty(HTMLImageElement.prototype, "src", {
+    configurable: image_src_desc.configurable,
+    enumerable: image_src_desc.enumerable,
+    get() { return image_src_desc.get!.call(this); },
+    set(uri: string) {
         // console.log(`Image loading ${uri}`);
-        super.src = uri;
+        image_src_desc.set!.call(this, uri);
         (async () => {
             const data = await (await fetch(uri)).arrayBuffer();
             const imageData = await loadImageData(data);
@@ -403,14 +397,8 @@ class Image extends HTMLImageElement {
             const event = new Event('load');
             this.dispatchEvent(event);
         })();
-    }
-
-    override get src() {
-        return super.src;
-    }
-}
-
-(globalThis as any).Image = Image;
+    },
+});
 
 // deno do not support document
 const document = (globalThis as any).document = (htmlPage as any).document;
@@ -418,33 +406,30 @@ const document = (globalThis as any).document = (htmlPage as any).document;
 let canvasCount = 0;
 
 document.createElementNS = function createElementNS(_namespaceURI: string, qualifiedName: string) {
-    if (qualifiedName === "img") {
-        // return new Proxy(new Image(), _log_handler);
-        return new Image();
-    } else if (qualifiedName === "canvas") {
+    if (qualifiedName === "canvas") {
         canvasCount += 1;
         if (canvasCount > 1) {
             throw new Error("create too many <canvas>");
         }
         return canvasDomMock;
     }
-
-    throw new Error(`Not support to create <${qualifiedName}>`);
+    // if (!['div', 'img'].includes(qualifiedName)) {
+    //     console.log(`document.createElementNS("${_namespaceURI}", "${qualifiedName}")`)
+    // }
+    return Object.getPrototypeOf(document).createElementNS.apply(this, arguments);
 };
 
 document.createElement = function createElement(tagName: string) {
-    if (tagName === "img") {
-        return new Image();
-    } else if (tagName === "canvas") {
+    if (tagName === "canvas") {
         canvasCount += 1;
         if (canvasCount > 1) {
             throw new Error("create too many <canvas>");
         }
         return canvasDomMock;
     }
-    if (tagName !== 'div') {
-        console.log(`document.createElement("${tagName}")`)
-    }
+    // if (!['div', 'img'].includes(tagName)) {
+    //     console.log(`document.createElement("${tagName}")`)
+    // }
     return Object.getPrototypeOf(document).createElement.apply(this, arguments);
 };
 
@@ -627,7 +612,7 @@ interface GPUImageDataLayout {
         // RGBA8
         imgData = source.data;
         ({ height, width } = source);
-    } else if (source instanceof Image) {
+    } else if (source instanceof HTMLImageElement) {
         // RGBA8
         imgData = (source as any)._imageData.data as Uint8ClampedArray;
         ({ height, width } = source);
