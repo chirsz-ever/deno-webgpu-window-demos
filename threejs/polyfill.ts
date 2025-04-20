@@ -368,7 +368,7 @@ if (!location) {
     }
 
     const load_with_cache_abs = async function (remotePath: string, localPath: string): Promise<ArrayBuffer> {
-        if (Deno.env.get("THREEJS_NO_CACHE") === "1") {
+        if (import.meta.dirname === undefined || Deno.env.get("THREEJS_NO_CACHE") === "1") {
             return (await fetch_origin(remotePath)).arrayBuffer();
         }
 
