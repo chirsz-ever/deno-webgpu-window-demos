@@ -299,12 +299,12 @@ if (!location) {
         return uri.startsWith(THREEJS_RES_BASE_URL) || uri.startsWith(MATERIALX_RES_BASE_URL) || is_relative(uri);
     }
 
-    // FIXME?: use "examples/jsm" built in three.js instead of fetch it form "https://threejs.org/examples/jsm/".
     const fetch_origin = fetch;
     globalThis.fetch = async function fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
         const input_str = input instanceof Request ? input.url : input.toString();
         if (is_cachable_url(input_str)) {
-            const data = await load_with_cache(input_str);
+            let data = await load_with_cache(input_str);
+            data = hookModifyFetchResult(input_str, data);
             // https://docs.deno.com/runtime/reference/web_platform_apis/#fetching-local-files
             // > No headers are set on the response. Therefore it is up to the consumer to determine things like the content type or content length.
             const ctype = input_str.endsWith(".jpg") ? "image/jpeg" : input_str.endsWith(".png") ? "image/png" : input_str.endsWith(".gif") ? "image/gif" : undefined;
@@ -388,6 +388,19 @@ if (!location) {
         }
         return data;
     }
+}
+
+// to modify draco for:
+//   - webgpu_postprocessing_ao.js
+//   - webgpu_tsl_angular_slicing.js
+//   - webgpu_loader_gltf_transmission.js
+function hookModifyFetchResult(url: string, data: ArrayBuffer): ArrayBuffer {
+    if (url.endsWith('/draco_wasm_wrapper.js') || url.endsWith('/draco_decoder.js')) {
+        const content = new TextDecoder().decode(data);
+        const newContent = 'delete globalThis.process;' + content;
+        return new TextEncoder().encode(newContent).buffer as ArrayBuffer;
+    }
+    return data;
 }
 
 const _log_handler = {
