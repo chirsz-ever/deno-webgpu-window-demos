@@ -21,18 +21,6 @@ const htmlPage = parseHTML('<!DOCTYPE html><html><head></head><body></body></htm
 const window = htmlPage.window;
 const Event = htmlPage.Event;
 
-// Deno 1.x has `window`, no `process`, be treated as web broswer environment.
-// Deno 2.x has no `window`, but has `process`, be treated as Node.js environment.
-//   but Deno 2.x does not have `require` ...
-import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
-{
-    const fn = KTX2Loader.BasisWorker.toString();
-    const newFn = fn.substring(0, fn.lastIndexOf('}')) +
-        ';delete globalThis.process;' +
-        fn.substring(fn.lastIndexOf('}'));
-    (KTX2Loader as any).BasisWorker = newFn;
-}
-
 const INIT_WIDTH = 1000;
 const INIT_HEIGHT = 750;
 
@@ -434,12 +422,19 @@ if (!location) {
     }
 }
 
+// Deno 1.x has `window`, no `process`, be treated as web broswer environment.
+// Deno 2.x has no `window`, but has `process`, be treated as Node.js environment.
+//   but Deno 2.x does not have `require` ...
+//
 // to modify draco for:
 //   - webgpu_postprocessing_ao.js
 //   - webgpu_tsl_angular_slicing.js
 //   - webgpu_loader_gltf_transmission.js
+// to modify basis for:
+//   - webgpu_loader_gltf_transmission.js
+//   - webgpu_sandbox.js
 function hookModifyFetchResult(url: string, data: ArrayBuffer): ArrayBuffer {
-    if (url.endsWith('/draco_wasm_wrapper.js') || url.endsWith('/draco_decoder.js')) {
+    if (url.endsWith('/draco_wasm_wrapper.js') || url.endsWith('/draco_decoder.js') || url.endsWith('/basis_transcoder.js')) {
         const content = new TextDecoder().decode(data);
         const newContent = 'delete globalThis.process;' + content;
         return new TextEncoder().encode(newContent).buffer as ArrayBuffer;
