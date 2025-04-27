@@ -2,9 +2,6 @@
 
 import { join, dirname } from "jsr:@std/path@1.0"
 import * as fs from "jsr:@std/fs@1.0"
-import { getPixels } from "https://deno.land/x/get_pixels@v1.2.2/mod.ts";
-import { parseGIF, decompressFrames } from "npm:gifuct-js@2.1.2"
-import WebP from 'npm:webp-wasm';
 
 import {
     EventType,
@@ -711,7 +708,7 @@ function getImageBitmapData(bitmap: ImageBitmap): Uint8Array {
 
 // Error: This operation is currently not supported
 // for webgpu_occlusion
-GPUQuerySet.prototype.destroy = () => {};
+GPUQuerySet.prototype.destroy = () => { };
 
 // https://github.com/denoland/deno/issues/28723
 const createImageBitmap_origin = globalThis.createImageBitmap;
@@ -802,17 +799,20 @@ function createRgbaImageData(data: Uint8Array, width: number, height: number): I
 async function loadImageData(data: ArrayBuffer): Promise<ImageData> {
     const u8view = new Uint8Array(data);
     if (is_png(u8view) || is_jpeg(u8view)) {
+        const { getPixels } = await import("https://deno.land/x/get_pixels@v1.2.2/mod.ts");
         const { data: image_data, width, height } = await getPixels(data);
         const imgData = createRgbaImageData(image_data, width, height);
         return imgData;
     } else if (is_gif(u8view)) {
+        const { parseGIF, decompressFrames } = await import("npm:gifuct-js@2.1.2");
         const gif = parseGIF(data);
         const frames = decompressFrames(gif, true);
         const frame0 = frames[0];
         const imgData = new ImageData(frame0.patch, frame0.dims.width, frame0.dims.height);
         return imgData;
     } else if (is_webp(u8view)) {
-        const img = await WebP.decode(u8view);
+        const WebP = await import('npm:webp-wasm');
+        const img = await WebP.decode(data);
         const imgData = new ImageData(new Uint8ClampedArray(img.data), img.width, img.height);
         return imgData;
     }
