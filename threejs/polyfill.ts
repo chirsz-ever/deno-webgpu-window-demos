@@ -867,6 +867,8 @@ const reIlligalCast = /[ui]32\(\s*([\d.]+)u?\s*\)/g;
 // FIXME
 const patEnableSubgroup = 'enable subgroups;';
 
+const reLod = /(textureLoad\(.*)level\s*\);/g;
+
 // FIXME: wgpu or three.js bug
 const GPUDevice_createShaderModule_origin = GPUDevice.prototype.createShaderModule;
 GPUDevice.prototype.createShaderModule = function (descriptor: GPUShaderModuleDescriptor) {
@@ -876,6 +878,10 @@ GPUDevice.prototype.createShaderModule = function (descriptor: GPUShaderModuleDe
     // https://github.com/gfx-rs/wgpu/issues/7471
     if (descriptor.code.search(patEnableSubgroup) != -1) {
         descriptor.code = descriptor.code.replaceAll(patEnableSubgroup, '');
+    }
+    // https://github.com/gfx-rs/wgpu/issues/5433
+    if (descriptor.code.search(reLod) != -1) {
+        descriptor.code = descriptor.code.replaceAll(reLod, '$1i32(level));');
     }
     return GPUDevice_createShaderModule_origin.call(this, descriptor);
 };
