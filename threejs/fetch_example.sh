@@ -62,10 +62,7 @@ if ( m|<script type="module">| ) {
         print "await polyfill.init(\"'"$TITLE"'\");\n\n";
     }
     ($pre_indent)=/^\t\t\t(\s+)/;
-    if (s|new THREE\.CanvasTexture\( new FlakesTexture\(\) \);|textureLoader.load( "polyfill-textures/FlakesTexture.png" );|) {
-        print "$pre_indent/* POLYFILL */\n";
-    }
-    elsif (s|from '\''./jsm/|from '\''three/addons/|) {
+    if (s|from '\''./jsm/|from '\''three/addons/|) {
         print "$pre_indent/* POLYFILL */\n";
     }
     s|^\t\t\t||;

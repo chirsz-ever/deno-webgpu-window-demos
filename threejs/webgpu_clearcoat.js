@@ -59,8 +59,7 @@ function init() {
 
 				const normalMap2 = textureLoader.load( 'textures/water/Water_1_M_Normal.jpg' );
 
-				/* POLYFILL */
-				const normalMap3 = textureLoader.load( "polyfill-textures/FlakesTexture.png" );
+				const normalMap3 = new THREE.CanvasTexture( new FlakesTexture() );
 				normalMap3.wrapS = THREE.RepeatWrapping;
 				normalMap3.wrapT = THREE.RepeatWrapping;
 				normalMap3.repeat.x = 10;

@@ -5,6 +5,7 @@
     "jsr:@std/fs@1.0": "1.0.14",
     "jsr:@std/path@1.0": "1.0.8",
     "jsr:@std/path@^1.0.8": "1.0.8",
+    "npm:@napi-rs/canvas@*": "0.1.69",
     "npm:gifuct-js@2.1.2": "2.1.2",
     "npm:linkedom@0.18.4": "0.18.4",
     "npm:webp-wasm@*": "1.0.6"
@@ -24,6 +25,51 @@
     }
   },
   "npm": {
+    "@napi-rs/canvas-android-arm64@0.1.69": {
+      "integrity": "sha512-4icWTByY8zPvM9SelfQKf3I6kwXw0aI5drBOVrwfER5kjwXJd78FPSDSZkxDHjvIo9Q86ljl18Yr963ehA4sHQ=="
+    },
+    "@napi-rs/canvas-darwin-arm64@0.1.69": {
+      "integrity": "sha512-HOanhhYlHdukA+unjelT4Dg3ta7e820x87/AG2dKUMsUzH19jaeZs9bcYjzEy2vYi/dFWKz7cSv2yaIOudB8Yg=="
+    },
+    "@napi-rs/canvas-darwin-x64@0.1.69": {
+      "integrity": "sha512-SIp7WfhxAPnSVK9bkFfJp+84rbATCIq9jMUzDwpCLhQ+v+OqtXe4pggX1oeV+62/HK6BT1t18qRmJfyqwJ9f3g=="
+    },
+    "@napi-rs/canvas-linux-arm-gnueabihf@0.1.69": {
+      "integrity": "sha512-Ls+KujCp6TGpkuMVFvrlx+CxtL+casdkrprFjqIuOAnB30Mct6bCEr+I83Tu29s3nNq4EzIGjdmA3fFAZG/Dtw=="
+    },
+    "@napi-rs/canvas-linux-arm64-gnu@0.1.69": {
+      "integrity": "sha512-m8VcGmeSBNRbHZBd1srvdM1aq/ScS2y8KqGqmCCEgJlytYK4jdULzAo2K/BPKE1v3xvn8oUPZDLI/NBJbJkEoA=="
+    },
+    "@napi-rs/canvas-linux-arm64-musl@0.1.69": {
+      "integrity": "sha512-a3xjNRIeK2m2ZORGv2moBvv3vbkaFZG1QKMeiEv/BKij+rkztuEhTJGMar+buICFgS0fLgphXXsKNkUSJb7eRQ=="
+    },
+    "@napi-rs/canvas-linux-riscv64-gnu@0.1.69": {
+      "integrity": "sha512-pClUoJF5wdC9AvD0mc15G9JffL1Q85nuH1rLSQPRkGmGmQOtRjw5E9xNbanz7oFUiPbjH7xcAXUjVAcf7tdgPQ=="
+    },
+    "@napi-rs/canvas-linux-x64-gnu@0.1.69": {
+      "integrity": "sha512-96X3bFAmzemfw84Ts6Jg/omL86uuynvK06MWGR/mp3JYNumY9RXofA14eF/kJIYelbYFWXcwpbcBR71lJ6G/YQ=="
+    },
+    "@napi-rs/canvas-linux-x64-musl@0.1.69": {
+      "integrity": "sha512-2QTsEFO72Kwkj53W9hc5y1FAUvdGx0V+pjJB+9oQF6Ys9+y989GyPIl5wZDzeh8nIJW6koZZ1eFa8pD+pA5BFQ=="
+    },
+    "@napi-rs/canvas-win32-x64-msvc@0.1.69": {
+      "integrity": "sha512-Q4YA8kVnKarApBVLu7F8icGlIfSll5Glswo5hY6gPS4Is2dCI8+ig9OeDM8RlwYevUIxKq8lZBypN8Q1iLAQ7w=="
+    },
+    "@napi-rs/canvas@0.1.69": {
+      "integrity": "sha512-ydvNeJMRm+l3T14yCoUKqjYQiEdXDq1isznI93LEBGYssXKfSaLNLHOkeM4z9Fnw9Pkt2EKOCAtW9cS4b00Zcg==",
+      "dependencies": [
+        "@napi-rs/canvas-android-arm64",
+        "@napi-rs/canvas-darwin-arm64",
+        "@napi-rs/canvas-darwin-x64",
+        "@napi-rs/canvas-linux-arm-gnueabihf",
+        "@napi-rs/canvas-linux-arm64-gnu",
+        "@napi-rs/canvas-linux-arm64-musl",
+        "@napi-rs/canvas-linux-riscv64-gnu",
+        "@napi-rs/canvas-linux-x64-gnu",
+        "@napi-rs/canvas-linux-x64-musl",
+        "@napi-rs/canvas-win32-x64-msvc"
+      ]
+    },
     "boolbase@1.0.0": {
       "integrity": "sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww=="
     },

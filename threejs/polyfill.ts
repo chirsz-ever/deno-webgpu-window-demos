@@ -14,6 +14,9 @@ import {
 import { DOMParser, HTMLElement, HTMLImageElement, parseHTML } from "npm:linkedom@0.18.4";
 (globalThis as any).DOMParser = DOMParser;
 
+// for canvas.getContext("2d")
+import { createCanvas, type Canvas as Canvas2d, type SKRSContext2D, ImageData as ImageData2d } from 'npm:@napi-rs/canvas';
+
 const htmlPage = parseHTML('<!DOCTYPE html><html><head></head><body></body></html>');
 const window = htmlPage.window;
 const Event = htmlPage.Event;
@@ -90,19 +93,35 @@ const _ignoredEvents = [
     "pointerdown", "pointermove", "pointerup", "wheel"
 ];
 
+let canvasCount = 0;
+
 class CanvasDomMock extends HTMLElement {
-    constructor(private surface: Deno.UnsafeWindowSurface) {
+    width = 300;
+    height = 150;
+    _canvas2d: Canvas2d | undefined;
+
+    constructor() {
         super(document, 'canvas');
     }
 
     getContext(name: string) {
-        if (name !== "webgpu") {
-            throw new Error(`canvas.getContext("${name}") is not supported`)
+        if (name === "webgpu") {
+            canvasCount += 1;
+            if (canvasCount > 1) {
+                throw new Error("create too many WebGPU <canvas>");
+            }
+            onScreenCanvas = this;
+
+            const context = surface.getContext(name);
+            currentContextMock = new GPUCanvasContextMock(context);
+            return currentContextMock;
+        } else if (name === "2d") {
+            this._canvas2d = createCanvas(this.width, this.height);
+            const ctx = this._canvas2d.getContext(name);
+            return hookContext2d(ctx);
         }
 
-        const context = this.surface.getContext(name);
-        currentContextMock = new GPUCanvasContextMock(context);
-        return currentContextMock;
+        throw new Error(`canvas.getContext("${name}") is not supported`)
     }
 
     override getBoundingClientRect() {
@@ -117,6 +136,30 @@ class CanvasDomMock extends HTMLElement {
             width: (window as any).innerWidth,
         }
     }
+}
+
+(globalThis as any).HTMLCanvasElement = CanvasDomMock;
+
+let hookContext2d_done = false;
+function hookContext2d(ctx: SKRSContext2D) {
+    if (hookContext2d_done) {
+        return ctx;
+    }
+    const _drawImage = ctx.drawImage;
+    Object.getPrototypeOf(ctx).drawImage = function drawImage(image: any, ...args: any[]) {
+        if (image instanceof HTMLImageElement) {
+            if ((image as any)._imageData) {
+                const imgData = (image as any)._imageData.data;
+                ctx.putImageData(new ImageData2d(imgData, image.width, image.height), ...args);
+            } else {
+                console.warn("drawImage: image._imageData is undefined");
+            }
+        } else {
+            _drawImage.call(ctx, image, ...args);
+        }
+    }
+    hookContext2d_done = true;
+    return ctx;
 }
 
 let lastMousePos: undefined | { x: number, y: number };
@@ -149,7 +192,7 @@ GPUAdapter.prototype.requestDevice = async function requestDevice(descriptor?: G
 
 let win: SDLWindow;
 let surface: Deno.UnsafeWindowSurface;
-let canvasDomMock: CanvasDomMock;
+let onScreenCanvas: CanvasDomMock | undefined;
 
 type FrameRequestCallback = (time: number) => void;
 
@@ -172,6 +215,10 @@ let currentTextureGot = false;
 
 // disapth both mouse/pointer events
 function dispatchPointerEvent(typ: string, x: number, y: number, buttons: number) {
+    if (!onScreenCanvas) {
+        return;
+    }
+
     const evtP = new PointerEvent("pointer" + typ);
     setMouseEventXY(evtP, x, y, typ === "move");
     evtP.buttons = buttons;
@@ -179,14 +226,14 @@ function dispatchPointerEvent(typ: string, x: number, y: number, buttons: number
     if (typ === "move") {
         evtP.button = -1;
     }
-    canvasDomMock.dispatchEvent(evtP);
+    onScreenCanvas.dispatchEvent(evtP);
 
     const evtM = new MouseEvent("mouse" + typ);
     setMouseEventXY(evtM, x, y);
     evtM.movementX = evtP.movementX;
     evtM.movementY = evtP.movementY;
     evtM.buttons = buttons;
-    canvasDomMock.dispatchEvent(evtM);
+    onScreenCanvas.dispatchEvent(evtM);
 }
 
 export async function runWindowEventLoop() {
@@ -214,7 +261,7 @@ export async function runWindowEventLoop() {
             evt.deltaY = event.y * 120;
             evt.deltaMode = evt.DOM_DELTA_PIXEL;
             setMouseEventXY(evt, lastMousePos?.x ?? 0, lastMousePos?.y ?? 0);
-            canvasDomMock.dispatchEvent(evt);
+            onScreenCanvas?.dispatchEvent(evt);
         }
         else if (event.type === EventType.WindowEvent) {
             switch (event.event) {
@@ -442,15 +489,9 @@ Object.defineProperty(HTMLImageElement.prototype, "src", {
 // deno do not support document
 const document = (globalThis as any).document = (htmlPage as any).document;
 
-let canvasCount = 0;
-
 document.createElementNS = function createElementNS(_namespaceURI: string, qualifiedName: string) {
     if (qualifiedName === "canvas") {
-        canvasCount += 1;
-        if (canvasCount > 1) {
-            throw new Error("create too many <canvas>");
-        }
-        return canvasDomMock;
+        return new CanvasDomMock();
     }
     // if (!['div', 'img'].includes(qualifiedName)) {
     //     console.log(`document.createElementNS("${_namespaceURI}", "${qualifiedName}")`)
@@ -460,11 +501,7 @@ document.createElementNS = function createElementNS(_namespaceURI: string, quali
 
 document.createElement = function createElement(tagName: string) {
     if (tagName === "canvas") {
-        canvasCount += 1;
-        if (canvasCount > 1) {
-            throw new Error("create too many <canvas>");
-        }
-        return canvasDomMock;
+        return new CanvasDomMock();
     }
     // if (!['div', 'img'].includes(tagName)) {
     //     console.log(`document.createElement("${tagName}")`)
@@ -476,7 +513,7 @@ document.getElementById = function getElementById(id: string) {
     // console.log(`document.getElementById("${id}")`)
     // HACK for webgpu_tsl_interoperability
     if (id === 'c') {
-        return canvasDomMock;
+        return onScreenCanvas;
     }
     let elm = Object.getPrototypeOf(document).getElementById.apply(this, arguments);
     if (!elm) {
@@ -540,8 +577,6 @@ export async function init(title: string) {
     win = new WindowBuilder(title, width, height).resizable().build();
     surface = win.windowSurface(width, height);
 
-    canvasDomMock = new CanvasDomMock(surface);
-
     // FIXME?: runWindowEventLoop must run after threejs codes.
     setTimeout(runWindowEventLoop, 0);
 }
@@ -587,13 +622,15 @@ class GPUCanvasContextMock implements GPUCanvasContext {
 
 // TypeScript definitions for WebGPU: https://github.com/gpuweb/types/blob/main/dist/index.d.ts
 
+type HTMLCanvasElement = CanvasDomMock;
+
 type GPUImageCopyExternalImageSource =
     | ImageBitmap
     | ImageData
     | HTMLImageElement
     // | HTMLVideoElement
     // | VideoFrame
-    // | HTMLCanvasElement
+    | HTMLCanvasElement
     // | OffscreenCanvas
     ;
 
@@ -655,6 +692,13 @@ interface GPUImageDataLayout {
         // RGBA8
         imgData = (source as any)._imageData.data as Uint8ClampedArray;
         ({ height, width } = source);
+    } else if (source instanceof CanvasDomMock) {
+        if (!source._canvas2d) {
+            throw new Error("only 2d canvas is supported to copyExternalImageToTexture");
+        }
+        imgData = new Uint8Array(source._canvas2d.data().buffer);
+        width = source._canvas2d.width;
+        height = source._canvas2d.height;
     } else {
         throw new TypeError("not support call GPUQueue.copyExternalImageToTexture with that source");
     }
