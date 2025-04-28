@@ -43,4 +43,6 @@ if [ ${#failed_demos[@]} -ne 0 ]; then
     done > "$failed_demos_output"
     echo -e "\033[31m[Error]\033[0m Some demos failed. See $failed_demos_output for details."
     exit 1
+else
+    rm -f "$failed_demos_output"
 fi
