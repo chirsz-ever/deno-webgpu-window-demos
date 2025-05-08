@@ -225,6 +225,8 @@ function dispatchPointerEvent(typ: string, x: number, y: number, buttons: number
 }
 
 export async function runWindowEventLoop() {
+    let resize_pending = false;
+    let size_changed = false;
     // TODO: Handle keyboard events
     for await (const event of win.events()) {
         if (event.type === EventType.Quit) {
@@ -261,18 +263,26 @@ export async function runWindowEventLoop() {
                     const new_height = event.data2;
                     (window as any).innerWidth = new_width;
                     (window as any).innerHeight = new_height;
-                    surface = win.windowSurface(new_width, new_height);
-                    const context = surface.getContext("webgpu");
-                    currentContextMock?._setContext(context);
-                    currentContextMock?._reconfigure();
-
-                    requestAnimationFrameCallbacks.unshift(() => {
-                        (window).dispatchEvent(new Event("resize"));
-                    });
+                    surface.resize(new_width, new_height);
+                    resize_pending = true;
+                    size_changed = true;
                 }
             }
         }
         else if (event.type === EventType.Draw) {
+            // skip the first next draw event after a resize event
+            // workaround for Error on X11
+            if (resize_pending) {
+                resize_pending = false;
+                continue;
+            }
+
+            if (size_changed) {
+                size_changed = false;
+                requestAnimationFrameCallbacks.unshift(() => {
+                    (window).dispatchEvent(new Event("resize"));
+                });
+            }
 
             if (requestAnimationFrameCallbacks.length > 0) {
                 if (VALIDATION)
