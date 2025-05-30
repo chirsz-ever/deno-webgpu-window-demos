@@ -2,6 +2,7 @@
 
 import { join, dirname } from "jsr:@std/path@1.0"
 import * as fs from "jsr:@std/fs@1.0"
+import { fileTypeFromBuffer } from "npm:file-type@21.0.0";
 
 import {
     EventType,
@@ -255,7 +256,6 @@ export async function runWindowEventLoop() {
         }
         else if (event.type === EventType.WindowEvent) {
             switch (event.event) {
-                // FIXME: resize not work on Linux
                 // SDL_WINDOWEVENT_SIZE_CHANGED
                 case 6: {
                     // console.info(`resize(${event.data1}, ${event.data2})`);
@@ -759,22 +759,20 @@ function getImageBitmapData(bitmap: ImageBitmap): Uint8Array {
 // for webgpu_occlusion
 GPUQuerySet.prototype.destroy = () => { };
 
+// https://github.com/denoland/deno/pull/25517
+const builtinImageFormatMimes = ['image/png', 'image/jpeg', 'image/bmp', 'image/vnd.microsoft.icon'];
+
 // https://github.com/denoland/deno/issues/28723
 const createImageBitmap_origin = globalThis.createImageBitmap;
 (globalThis as any).createImageBitmap = async function createImageBitmap(image: ImageBitmapSource, ...args: any[]) {
     if (image instanceof Blob) {
-        if (['image/png', 'image/jpeg', 'image/bmp', 'image/vnd.microsoft.icon'].includes(image.type))
+        if (builtinImageFormatMimes.includes(image.type))
             return createImageBitmap_origin(image, ...args);
 
         const buffer = await image.arrayBuffer();
-        const u8view = new Uint8Array(buffer);
-        const ctype = is_png(u8view) ? 'image/png' :
-            is_jpeg(u8view) ? 'image/jpeg' :
-                undefined;
-        // console.info(`createImageBitmap: detect content-type: ${ctype}`)
-        if (ctype) {
-            const newBlob = image.slice(0, image.size, ctype);
-            return createImageBitmap_origin(newBlob, ...args);
+        const ftype = await fileTypeFromBuffer(buffer);
+        if (ftype && builtinImageFormatMimes.includes(ftype.mime)) {
+            return createImageBitmap_origin(image, ...args);
         }
 
         // load RGBA data by hand
