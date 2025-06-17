@@ -7,8 +7,7 @@
         "three/src/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/",
         "three/tsl": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.TSL.js",
         "deno_sdl2": "jsr:@divy/sdl2@0.14.0",
-        "three/addons/libs/stats.module.js": "./threejs/polyfill/stats.ts",
-        "stats-gl": "./threejs/polyfill/stats.ts"
+        "stats-gl": "https://cdn.jsdelivr.net/npm/stats-gl@3.6.0/dist/main.js"
     },
     "unstable": [
         "webgpu",

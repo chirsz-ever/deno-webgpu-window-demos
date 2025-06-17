@@ -143,7 +143,14 @@ function hookContext2d(ctx: SKRSContext2D) {
             } else {
                 console.warn("drawImage: image._imageData is undefined");
             }
+        } else if (image instanceof CanvasDomMock) {
+            if (!image._canvas2d) {
+                throw new Error("drawImage: canvas.getContext('2d') is not called");
+            }
+            _drawImage.call(ctx, image._canvas2d, ...args);
         } else {
+            console.warn(`drawImage: try to call with image: ${Object.getPrototypeOf(image).constructor.name}, args: ${args}`);
+            // ignore, or would throw error in stats-gl
             _drawImage.call(ctx, image, ...args);
         }
     }
