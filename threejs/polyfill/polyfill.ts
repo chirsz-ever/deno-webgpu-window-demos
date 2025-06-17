@@ -139,6 +139,7 @@ function hookContext2d(ctx: SKRSContext2D) {
         if (image instanceof HTMLImageElement) {
             if ((image as any)._imageData) {
                 const imgData = (image as any)._imageData.data;
+                // @ts-ignore: args must have tuple type
                 ctx.putImageData(new ImageData2d(imgData, image.width, image.height), ...args);
             } else {
                 console.warn("drawImage: image._imageData is undefined");
@@ -147,10 +148,11 @@ function hookContext2d(ctx: SKRSContext2D) {
             if (!image._canvas2d) {
                 throw new Error("drawImage: canvas.getContext('2d') is not called");
             }
+            // @ts-ignore: args must have tuple type 
             _drawImage.call(ctx, image._canvas2d, ...args);
         } else {
-            console.warn(`drawImage: try to call with image: ${Object.getPrototypeOf(image).constructor.name}, args: ${args}`);
-            // ignore, or would throw error in stats-gl
+            console.warn(`drawImage: try to call with image: ${Object.getPrototypeOf(image).constructor.name}, args: ${args}`); 
+            // @ts-ignore: args must have tuple type
             _drawImage.call(ctx, image, ...args);
         }
     }

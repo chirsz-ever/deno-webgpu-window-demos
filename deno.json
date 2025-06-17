@@ -12,5 +12,10 @@
     "unstable": [
         "webgpu",
         "ffi"
-    ]
+    ],
+    "lint": {
+        "exclude": [
+            "**/*.js"
+        ]
+    }
 }
