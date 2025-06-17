@@ -9,5 +9,5 @@ You need install [Deno](https://deno.com) first. Require Deno version 2.3.5.
 Then run the following command to run the "backdrop" demo:
 
 ```sh
-deno run -A threejs/webgpu_backdrop.js
+deno run -A threejs/examples/webgpu_backdrop.js
 ```
