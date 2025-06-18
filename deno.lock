@@ -886,7 +886,8 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@divy/sdl2@0.14.0"
+      "jsr:@divy/sdl2@0.14.0",
+      "npm:linkedom@0.18.4"
     ]
   }
 }
