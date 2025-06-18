@@ -16,12 +16,12 @@ fi
 
 failed_demos_output=$PWD/$failed_demos_output
 
-cd "$THREEJS_DIR/examples"
-
 if [[ -n $1 ]]; then
     demo_list=()
     while IFS='' read -r line; do demo_list+=("$line"); done < "$1"
+    cd "$THREEJS_DIR/examples"
 else
+    cd "$THREEJS_DIR/examples"
     demo_list=(webgpu_*.js)
 fi
 
