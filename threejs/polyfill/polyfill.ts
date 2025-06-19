@@ -73,6 +73,8 @@ export async function runWindowEventLoop() {
                     callback!(t);
                 }
 
+                CanvasDomMock._drawCanvas();
+
                 currentContextMock?._present();
 
                 if (VALIDATION) {
