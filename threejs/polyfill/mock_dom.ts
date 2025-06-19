@@ -37,6 +37,7 @@ export const htmlPage = linkedom.parseHTML('<!DOCTYPE html><html><head></head><b
 globalThis.window = htmlPage.window;
 globalThis.document = htmlPage.window.document;
 globalThis.Image = window.Image;
+window.location = location || { search: '' } as Location;
 
 type FrameRequestCallback = (time: number) => void;
 export const requestAnimationFrameCallbacks: FrameRequestCallback[] = [];
@@ -137,11 +138,9 @@ Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
 // implement Image.src
 const image_src_desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src")!;
 Object.defineProperty(HTMLImageElement.prototype, "src", {
-    configurable: image_src_desc.configurable,
-    enumerable: image_src_desc.enumerable,
-    get() { return image_src_desc.get!.call(this); },
+    ...image_src_desc,
     set(uri: string) {
-        console.log(`Image loading ${uri}`);
+        // console.log(`Image loading ${uri}`);
         image_src_desc.set!.call(this, uri);
         (async () => {
             const data = await (await fetch(uri)).arrayBuffer();

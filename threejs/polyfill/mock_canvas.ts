@@ -3,8 +3,6 @@ import { createCanvas, type Canvas as Canvas2d, type SKRSContext2D, ImageData as
 
 import * as linkedom from "linkedom";
 
-import './mock_dom.ts';
-
 let canvasCount = 0;
 export let currentContextMock: GPUCanvasContextMock | undefined;
 export let onScreenCanvas: CanvasDomMock | undefined;

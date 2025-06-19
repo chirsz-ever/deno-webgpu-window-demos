@@ -1,15 +1,10 @@
 import { join, dirname } from "jsr:@std/path@1.0"
 import * as fs from "jsr:@std/fs@1.0"
 
-import './mock_dom.ts';
-
 // you can also use `--location` argument, for example
 // `--location https://threejs.org/examples/webgpu_backdrop.html`
 if (!location) {
     // TODO: support to pass query params from command arguments
-    window.location = {
-        search: ''
-    } as Location;
 
     // mock `fetch` API to use cache
 
