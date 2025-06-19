@@ -73,10 +73,7 @@ export async function runWindowEventLoop() {
                     callback!(t);
                 }
 
-                if (currentContextMock?._currentTextureGot) {
-                    surface.present();
-                    currentContextMock._currentTextureGot = false;
-                }
+                currentContextMock?._present();
 
                 if (VALIDATION) {
                     currentDevice?.popErrorScope().then((error) => {

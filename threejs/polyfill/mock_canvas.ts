@@ -140,4 +140,11 @@ class GPUCanvasContextMock implements GPUCanvasContext {
     _setContext(context: GPUCanvasContext) {
         this.#context = context;
     }
+
+    _present() {
+        if (this._currentTextureGot) {
+            CanvasDomMock._surface.present();
+            this._currentTextureGot = false;
+        }
+    }
 }
