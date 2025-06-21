@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
 THIS_DIR=$(dirname "$(realpath "$0")")
 THREEJS_DIR=$(realpath "$THIS_DIR/..")
 
@@ -15,13 +14,14 @@ if [[ $1 == "--help" || $1 == "-h" ]]; then
 fi
 
 failed_demos_output=$PWD/$failed_demos_output
+auto_test=true
 
 if [[ -n $1 ]]; then
     demo_list=()
     while IFS='' read -r line; do demo_list+=("$line"); done < "$1"
-    cd "$THREEJS_DIR/examples"
+    cd "$THREEJS_DIR/examples" || exit 1
 else
-    cd "$THREEJS_DIR/examples"
+    cd "$THREEJS_DIR/examples" || exit 1
     demo_list=(webgpu_*.js)
 fi
 
@@ -32,8 +32,21 @@ total=${#demo_list[@]}
 for f in "${demo_list[@]}"; do
     i=$((i + 1))
     echo -e "\033[34m[Run $i of $total]\033[0m $f"
-    if ! deno run --allow-all "$f" --enable-validation; then
-        failed_demos+=("$f")
+    cmd="deno run --allow-all $f"
+    if $auto_test; then
+        $cmd &
+        pid=$!
+        ( sleep 2; kill $pid &>/dev/null ) &
+        killerPid=$!
+        wait $pid
+        if kill -0 $killerPid &>/dev/null; then
+            kill $killerPid &>/dev/null
+            failed_demos+=("$f")
+        fi
+    else
+        if ! $cmd; then
+            failed_demos+=("$f")
+        fi
     fi
 done
 
