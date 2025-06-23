@@ -3,7 +3,7 @@ import { createCanvas, type Canvas as Canvas2d, type SKRSContext2D, ImageData as
 
 import * as linkedom from "linkedom";
 import { currentDevice } from "./hook_webgpu.ts";
-import { simpleRenderTexture } from "./simple_draw.ts";
+import { SimpleDrawer } from "./simple_draw.ts";
 
 let canvasCount = 0;
 export let currentContextMock: GPUCanvasContextMock | undefined;
@@ -15,11 +15,8 @@ export class CanvasDomMock extends linkedom.HTMLElement {
     _canvas2d: Canvas2d | undefined;
     #gpuTexture: GPUTexture | undefined;
 
-    static _instances: CanvasDomMock[] = [];
-
     constructor() {
         super(document, 'canvas');
-        CanvasDomMock._instances.push(this);
     }
 
     static _surface: Deno.UnsafeWindowSurface;
@@ -67,7 +64,7 @@ export class CanvasDomMock extends linkedom.HTMLElement {
         throw new Error('toDataURL: only support 2D canvas');
     }
 
-    _gpuTexture(): GPUTexture {
+    private get _gpuTexture(): GPUTexture {
         if (!this._canvas2d) {
             throw new Error('_gpuTexture must on a 2d canvas');
         }
@@ -85,7 +82,7 @@ export class CanvasDomMock extends linkedom.HTMLElement {
         return this.#gpuTexture;
     }
 
-    _syncGpuTexture(): void {
+    private _syncGpuTexture(): void {
         if (!this._canvas2d) {
             throw new Error('_syncGpuTexture must on a 2d canvas');
         }
@@ -93,24 +90,40 @@ export class CanvasDomMock extends linkedom.HTMLElement {
             throw new Error('_syncGpuTexture: no device');
         }
         currentDevice.queue.writeTexture(
-            { texture: this._gpuTexture() },
+            { texture: this._gpuTexture },
             this._canvas2d.data(),
             { bytesPerRow: this._canvas2d.width * 4 },
             [this._canvas2d.width, this._canvas2d.height],
         );
     }
 
+    #drawer: SimpleDrawer | undefined;
+    private get _drawer(): SimpleDrawer {
+        if (!this.#drawer) {
+            if (!currentDevice) {
+                throw new Error('_drawer: no device');
+            }
+            if (!currentContextMock) {
+                throw new Error('_drawer: no output context');
+            }
+            this.#drawer = new SimpleDrawer(currentDevice, this._gpuTexture, currentContextMock.getCurrentTexture().format);
+        }
+        return this.#drawer;
+    }
+
+
     static _drawCanvas() {
         if (!currentDevice || !currentContextMock) {
             return;
         }
 
-        for (const c of this._instances) {
-            if (c._canvas2d && c.style.display !== 'none') {
+        for (const c of document.getElementsByTagName('canvas') as CanvasDomMock[]) {
+            if (c._canvas2d && c.style.display === 'block') {
                 c._syncGpuTexture();
-                const src = c._gpuTexture();
                 const dst = currentContextMock.getCurrentTexture();
-                simpleRenderTexture(currentDevice, src, dst, [0, 0, c.width, c.height]);
+                const x = parseInt(c.style.left || 0);
+                const y = parseInt(c.style.top || 0);
+                c._drawer.render(dst, [x, y, c.width, c.height]);
             }
         }
     }
