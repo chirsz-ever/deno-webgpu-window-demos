@@ -1,83 +1,98 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@divy/sdl2@0.14.0": "0.14.0",
-    "jsr:@std/fs@1.0": "1.0.14",
-    "jsr:@std/path@1.0": "1.0.8",
-    "jsr:@std/path@^1.0.8": "1.0.8",
-    "npm:@napi-rs/canvas@*": "0.1.69",
+    "jsr:@divy/sdl2@0.15.0": "0.15.0",
+    "jsr:@std/fs@1.0": "1.0.19",
+    "jsr:@std/internal@^1.0.10": "1.0.12",
+    "jsr:@std/internal@^1.0.9": "1.0.12",
+    "jsr:@std/path@1.0": "1.0.9",
+    "jsr:@std/path@^1.1.1": "1.1.2",
+    "npm:@napi-rs/canvas@*": "0.1.80",
     "npm:file-type@21.0.0": "21.0.0",
     "npm:gifuct-js@2.1.2": "2.1.2",
-    "npm:linkedom@0.18.4": "0.18.4",
+    "npm:linkedom@0.18.12": "0.18.12",
     "npm:webp-wasm@*": "1.0.6"
   },
   "jsr": {
-    "@divy/sdl2@0.14.0": {
-      "integrity": "01347d34dd12cabd972eec340a142cdc6176f9e2720a72ab3515f73cf9d27bad"
+    "@divy/sdl2@0.15.0": {
+      "integrity": "d85d212807604d41a116ce7c86449794168cf8a3a839d74c5083ddd986f679ae"
     },
-    "@std/fs@1.0.14": {
-      "integrity": "1e84bf0b95fe08f41f1f4aea9717bbf29f45408a56ce073b0114474ce1c9fccf",
+    "@std/fs@1.0.19": {
+      "integrity": "051968c2b1eae4d2ea9f79a08a3845740ef6af10356aff43d3e2ef11ed09fb06",
       "dependencies": [
-        "jsr:@std/path@^1.0.8"
+        "jsr:@std/internal@^1.0.9",
+        "jsr:@std/path@^1.1.1"
       ]
     },
-    "@std/path@1.0.8": {
-      "integrity": "548fa456bb6a04d3c1a1e7477986b6cffbce95102d0bb447c67c4ee70e0364be"
+    "@std/internal@1.0.12": {
+      "integrity": "972a634fd5bc34b242024402972cd5143eac68d8dffaca5eaa4dba30ce17b027"
+    },
+    "@std/path@1.0.9": {
+      "integrity": "260a49f11edd3db93dd38350bf9cd1b4d1366afa98e81b86167b4e3dd750129e"
+    },
+    "@std/path@1.1.2": {
+      "integrity": "c0b13b97dfe06546d5e16bf3966b1cadf92e1cc83e56ba5476ad8b498d9e3038",
+      "dependencies": [
+        "jsr:@std/internal@^1.0.10"
+      ]
     }
   },
   "npm": {
-    "@napi-rs/canvas-android-arm64@0.1.69": {
-      "integrity": "sha512-4icWTByY8zPvM9SelfQKf3I6kwXw0aI5drBOVrwfER5kjwXJd78FPSDSZkxDHjvIo9Q86ljl18Yr963ehA4sHQ==",
+    "@borewit/text-codec@0.1.1": {
+      "integrity": "sha512-5L/uBxmjaCIX5h8Z+uu+kA9BQLkc/Wl06UGR5ajNRxu+/XjonB5i8JpgFMrPj3LXTCPA0pv8yxUvbUi+QthGGA=="
+    },
+    "@napi-rs/canvas-android-arm64@0.1.80": {
+      "integrity": "sha512-sk7xhN/MoXeuExlggf91pNziBxLPVUqF2CAVnB57KLG/pz7+U5TKG8eXdc3pm0d7Od0WreB6ZKLj37sX9muGOQ==",
       "os": ["android"],
       "cpu": ["arm64"]
     },
-    "@napi-rs/canvas-darwin-arm64@0.1.69": {
-      "integrity": "sha512-HOanhhYlHdukA+unjelT4Dg3ta7e820x87/AG2dKUMsUzH19jaeZs9bcYjzEy2vYi/dFWKz7cSv2yaIOudB8Yg==",
+    "@napi-rs/canvas-darwin-arm64@0.1.80": {
+      "integrity": "sha512-O64APRTXRUiAz0P8gErkfEr3lipLJgM6pjATwavZ22ebhjYl/SUbpgM0xcWPQBNMP1n29afAC/Us5PX1vg+JNQ==",
       "os": ["darwin"],
       "cpu": ["arm64"]
     },
-    "@napi-rs/canvas-darwin-x64@0.1.69": {
-      "integrity": "sha512-SIp7WfhxAPnSVK9bkFfJp+84rbATCIq9jMUzDwpCLhQ+v+OqtXe4pggX1oeV+62/HK6BT1t18qRmJfyqwJ9f3g==",
+    "@napi-rs/canvas-darwin-x64@0.1.80": {
+      "integrity": "sha512-FqqSU7qFce0Cp3pwnTjVkKjjOtxMqRe6lmINxpIZYaZNnVI0H5FtsaraZJ36SiTHNjZlUB69/HhxNDT1Aaa9vA==",
       "os": ["darwin"],
       "cpu": ["x64"]
     },
-    "@napi-rs/canvas-linux-arm-gnueabihf@0.1.69": {
-      "integrity": "sha512-Ls+KujCp6TGpkuMVFvrlx+CxtL+casdkrprFjqIuOAnB30Mct6bCEr+I83Tu29s3nNq4EzIGjdmA3fFAZG/Dtw==",
+    "@napi-rs/canvas-linux-arm-gnueabihf@0.1.80": {
+      "integrity": "sha512-eyWz0ddBDQc7/JbAtY4OtZ5SpK8tR4JsCYEZjCE3dI8pqoWUC8oMwYSBGCYfsx2w47cQgQCgMVRVTFiiO38hHQ==",
       "os": ["linux"],
       "cpu": ["arm"]
     },
-    "@napi-rs/canvas-linux-arm64-gnu@0.1.69": {
-      "integrity": "sha512-m8VcGmeSBNRbHZBd1srvdM1aq/ScS2y8KqGqmCCEgJlytYK4jdULzAo2K/BPKE1v3xvn8oUPZDLI/NBJbJkEoA==",
+    "@napi-rs/canvas-linux-arm64-gnu@0.1.80": {
+      "integrity": "sha512-qwA63t8A86bnxhuA/GwOkK3jvb+XTQaTiVML0vAWoHyoZYTjNs7BzoOONDgTnNtr8/yHrq64XXzUoLqDzU+Uuw==",
       "os": ["linux"],
       "cpu": ["arm64"]
     },
-    "@napi-rs/canvas-linux-arm64-musl@0.1.69": {
-      "integrity": "sha512-a3xjNRIeK2m2ZORGv2moBvv3vbkaFZG1QKMeiEv/BKij+rkztuEhTJGMar+buICFgS0fLgphXXsKNkUSJb7eRQ==",
+    "@napi-rs/canvas-linux-arm64-musl@0.1.80": {
+      "integrity": "sha512-1XbCOz/ymhj24lFaIXtWnwv/6eFHXDrjP0jYkc6iHQ9q8oXKzUX1Lc6bu+wuGiLhGh2GS/2JlfORC5ZcXimRcg==",
       "os": ["linux"],
       "cpu": ["arm64"]
     },
-    "@napi-rs/canvas-linux-riscv64-gnu@0.1.69": {
-      "integrity": "sha512-pClUoJF5wdC9AvD0mc15G9JffL1Q85nuH1rLSQPRkGmGmQOtRjw5E9xNbanz7oFUiPbjH7xcAXUjVAcf7tdgPQ==",
+    "@napi-rs/canvas-linux-riscv64-gnu@0.1.80": {
+      "integrity": "sha512-XTzR125w5ZMs0lJcxRlS1K3P5RaZ9RmUsPtd1uGt+EfDyYMu4c6SEROYsxyatbbu/2+lPe7MPHOO/0a0x7L/gw==",
       "os": ["linux"],
       "cpu": ["riscv64"]
     },
-    "@napi-rs/canvas-linux-x64-gnu@0.1.69": {
-      "integrity": "sha512-96X3bFAmzemfw84Ts6Jg/omL86uuynvK06MWGR/mp3JYNumY9RXofA14eF/kJIYelbYFWXcwpbcBR71lJ6G/YQ==",
+    "@napi-rs/canvas-linux-x64-gnu@0.1.80": {
+      "integrity": "sha512-BeXAmhKg1kX3UCrJsYbdQd3hIMDH/K6HnP/pG2LuITaXhXBiNdh//TVVVVCBbJzVQaV5gK/4ZOCMrQW9mvuTqA==",
       "os": ["linux"],
       "cpu": ["x64"]
     },
-    "@napi-rs/canvas-linux-x64-musl@0.1.69": {
-      "integrity": "sha512-2QTsEFO72Kwkj53W9hc5y1FAUvdGx0V+pjJB+9oQF6Ys9+y989GyPIl5wZDzeh8nIJW6koZZ1eFa8pD+pA5BFQ==",
+    "@napi-rs/canvas-linux-x64-musl@0.1.80": {
+      "integrity": "sha512-x0XvZWdHbkgdgucJsRxprX/4o4sEed7qo9rCQA9ugiS9qE2QvP0RIiEugtZhfLH3cyI+jIRFJHV4Fuz+1BHHMg==",
       "os": ["linux"],
       "cpu": ["x64"]
     },
-    "@napi-rs/canvas-win32-x64-msvc@0.1.69": {
-      "integrity": "sha512-Q4YA8kVnKarApBVLu7F8icGlIfSll5Glswo5hY6gPS4Is2dCI8+ig9OeDM8RlwYevUIxKq8lZBypN8Q1iLAQ7w==",
+    "@napi-rs/canvas-win32-x64-msvc@0.1.80": {
+      "integrity": "sha512-Z8jPsM6df5V8B1HrCHB05+bDiCxjE9QA//3YrkKIdVDEwn5RKaqOxCJDRJkl48cJbylcrJbW4HxZbTte8juuPg==",
       "os": ["win32"],
       "cpu": ["x64"]
     },
-    "@napi-rs/canvas@0.1.69": {
-      "integrity": "sha512-ydvNeJMRm+l3T14yCoUKqjYQiEdXDq1isznI93LEBGYssXKfSaLNLHOkeM4z9Fnw9Pkt2EKOCAtW9cS4b00Zcg==",
+    "@napi-rs/canvas@0.1.80": {
+      "integrity": "sha512-DxuT1ClnIPts1kQx8FBmkk4BQDTfI5kIzywAaMjQSXfNnra5UFU9PwurXrl+Je3bJ6BGsp/zmshVVFbCmyI+ww==",
       "optionalDependencies": [
         "@napi-rs/canvas-android-arm64",
         "@napi-rs/canvas-darwin-arm64",
@@ -105,8 +120,8 @@
     "boolbase@1.0.0": {
       "integrity": "sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww=="
     },
-    "css-select@5.1.0": {
-      "integrity": "sha512-nwoRF1rvRRnnCqqY7updORDsuqKzqYJ28+oSMaJMMgOauh3fvwHqMS7EZpIPqK8GL+g9mKxF1vP/ZjSeNjEVHg==",
+    "css-select@5.2.2": {
+      "integrity": "sha512-TizTzUddG/xYLA3NXodFM0fSbNizXjOKhqiQQwvhlspadZokn1KDy0NZFS0wuEubIYAV5/c1/lAr0TaaFXEXzw==",
       "dependencies": [
         "boolbase",
         "css-what",
@@ -115,14 +130,14 @@
         "nth-check"
       ]
     },
-    "css-what@6.1.0": {
-      "integrity": "sha512-HTUrgRJ7r4dsZKU6GjmpfRK1O76h97Z8MfS1G0FozR+oF2kG6Vfe8JE6zwrkbxigziPHinCJ+gCPjA9EaBDtRw=="
+    "css-what@6.2.2": {
+      "integrity": "sha512-u/O3vwbptzhMs3L1fQE82ZSLHQQfto5gyZzwteVIEyeaY5Fc7R4dapF/BvRoSYFeqfBk4m0V1Vafq5Pjv25wvA=="
     },
     "cssom@0.5.0": {
       "integrity": "sha512-iKuQcq+NdHqlAcwUY0o/HL69XQrUaQdMjmStJ8JFmUaiiQErlhrmuigkg/CU4E2J0IyUKUrMAgl36TvN67MqTw=="
     },
-    "debug@4.4.1": {
-      "integrity": "sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==",
+    "debug@4.4.3": {
+      "integrity": "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==",
       "dependencies": [
         "ms"
       ]
@@ -132,7 +147,7 @@
       "dependencies": [
         "domelementtype",
         "domhandler",
-        "entities"
+        "entities@4.5.0"
       ]
     },
     "domelementtype@2.3.0": {
@@ -155,6 +170,9 @@
     "entities@4.5.0": {
       "integrity": "sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw=="
     },
+    "entities@6.0.1": {
+      "integrity": "sha512-aN97NXWF6AWBTahfVOIrB/NShkzi5H7F9r1s9mD3cDj4Ko5f2qhhVoYMibXF7GlLveb/D2ioWay8lxI97Ven3g=="
+    },
     "fflate@0.8.2": {
       "integrity": "sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A=="
     },
@@ -176,13 +194,13 @@
     "html-escaper@3.0.3": {
       "integrity": "sha512-RuMffC89BOWQoY0WKGpIhn5gX3iI54O6nRA0yC124NYVtzjmFWBIiFd8M0x+ZdX0P9R4lADg1mgP8C7PxGOWuQ=="
     },
-    "htmlparser2@9.1.0": {
-      "integrity": "sha512-5zfg6mHUoaer/97TxnGpxmbR7zJtPwIYFMZ/H5ucTlPZhKvtum05yiPK3Mgai3a0DyVxv7qYqoweaEd2nrYQzQ==",
+    "htmlparser2@10.0.0": {
+      "integrity": "sha512-TwAZM+zE5Tq3lrEHvOlvwgj1XLWQCtaaibSN11Q+gGBAS7Y1uZSWwXXRe4iF6OXnaq1riyQAPFOBtYc77Mxq0g==",
       "dependencies": [
         "domelementtype",
         "domhandler",
         "domutils",
-        "entities"
+        "entities@6.0.1"
       ]
     },
     "ieee754@1.2.1": {
@@ -191,8 +209,8 @@
     "js-binary-schema-parser@2.0.3": {
       "integrity": "sha512-xezGJmOb4lk/M1ZZLTR/jaBHQ4gG/lqQnJqdIv4721DMggsa1bDVlHXNeHYogaIEHD9vCRv0fcL4hMA+Coarkg=="
     },
-    "linkedom@0.18.4": {
-      "integrity": "sha512-JhLErxMIEOKByMi3fURXgI1fYOzR87L1Cn0+MI9GlMckFrqFZpV1SUGox1jcKtsKN3y6JgclcQf0FzZT//BuGw==",
+    "linkedom@0.18.12": {
+      "integrity": "sha512-jalJsOwIKuQJSeTvsgzPe9iJzyfVaEJiEXl+25EkKevsULHvMJzpNqwvj1jOESWdmgKDiXObyjOYwlUqG7wo1Q==",
       "dependencies": [
         "css-select",
         "cssom",
@@ -210,19 +228,16 @@
         "boolbase"
       ]
     },
-    "peek-readable@7.0.0": {
-      "integrity": "sha512-nri2TO5JE3/mRryik9LlHFT53cgHfRK0Lt0BAZQXku/AW3E6XLt2GaY8siWi7dvW/m1z0ecn+J+bpDa9ZN3IsQ=="
-    },
-    "strtok3@10.2.2": {
-      "integrity": "sha512-Xt18+h4s7Z8xyZ0tmBoRmzxcop97R4BAh+dXouUDCYn+Em+1P3qpkUfI5ueWLT8ynC5hZ+q4iPEmGG1urvQGBg==",
+    "strtok3@10.3.4": {
+      "integrity": "sha512-KIy5nylvC5le1OdaaoCJ07L+8iQzJHGH6pWDuzS+d07Cu7n1MZ2x26P8ZKIWfbK02+XIL8Mp4RkWeqdUCrDMfg==",
       "dependencies": [
-        "@tokenizer/token",
-        "peek-readable"
+        "@tokenizer/token"
       ]
     },
-    "token-types@6.0.0": {
-      "integrity": "sha512-lbDrTLVsHhOMljPscd0yitpozq7Ga2M5Cvez5AjGg8GASBjtt6iERCAJ93yommPmz62fb45oFIXHEZ3u9bfJEA==",
+    "token-types@6.1.1": {
+      "integrity": "sha512-kh9LVIWH5CnL63Ipf0jhlBIy0UsrMj/NJDfpsy1SqOXlLKEVyXXYrnFxFT1yOOYVGBSApeVnjPw/sBz5BfEjAQ==",
       "dependencies": [
+        "@borewit/text-codec",
         "@tokenizer/token",
         "ieee754"
       ]
@@ -230,106 +245,23 @@
     "uhyphen@0.2.0": {
       "integrity": "sha512-qz3o9CHXmJJPGBdqzab7qAYuW8kQGKNEuoHFYrBwV6hWIMcpAmxDLXojcHfFr9US1Pe6zUswEIJIbLI610fuqA=="
     },
-    "uint8array-extras@1.4.0": {
-      "integrity": "sha512-ZPtzy0hu4cZjv3z5NW9gfKnNLjoz4y6uv4HlelAjDK7sY/xOkKZv9xK/WQpcsBB3jEybChz9DPC2U/+cusjJVQ=="
+    "uint8array-extras@1.5.0": {
+      "integrity": "sha512-rvKSBiC5zqCCiDZ9kAOszZcDvdAHwwIKJG33Ykj43OKcWsnmcBRL09YTU4nOeHZ8Y2a7l1MgTd08SBe9A8Qj6A=="
     },
     "webp-wasm@1.0.6": {
       "integrity": "sha512-RqBXDs/pwLc4dCChFfOw9FvBULRW6o/XGKMSbkWaPuTVtQ0oQx12A/k0rtiKF9fSsb9dxzOFGT7kE2R3jxMszA=="
     }
   },
   "redirects": {
-    "https://esm.sh/destr@^2.0.1?target=denonext": "https://esm.sh/destr@2.0.3?target=denonext",
-    "https://esm.sh/ufo@^1.3.0?target=denonext": "https://esm.sh/ufo@1.5.4?target=denonext"
+    "https://esm.sh/destr@^2.0.1?target=denonext": "https://esm.sh/destr@2.0.5?target=denonext",
+    "https://esm.sh/ufo@^1.3.0?target=denonext": "https://esm.sh/ufo@1.6.1?target=denonext"
   },
   "remote": {
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/capabilities/WebGPU.js": "f7819ce6b1e787eb2b18c0eb52213eb8873d7d6983d4e7f7365fb33cb0d68445",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/controls/OrbitControls.js": "5d7c52f599864315c6e34af1262e39553fa1e1ad1e30066461be780c89a65690",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/controls/TransformControls.js": "6f6acf44f5c77003c133c68b04beced28dd9f3d17c14d16f11f4ce62367e81e4",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/csm/CSMFrustum.js": "310f55225d4e7c1e47824ef269ddea3e9c4848d0ad585ac5d947e7678df0b738",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/csm/CSMHelper.js": "2ffd53a0ddf45da238b874f9cdd5f72a5d5080350ad62be94103777b344556a4",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/csm/CSMShadowNode.js": "df43093d26519fd08105ebf915e88ba7bbaee497aff665963ca7ed88068806a2",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/curves/NURBSCurve.js": "803e98f7f7672177ba5ccede254983bb4ca7fad76cea7fe8470cd5212a6f9015",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/curves/NURBSUtils.js": "5b417d371ea9e813e7302a7bf3018c6c7f6b5bb0c6a23c561410288fe46f2583",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/environments/RoomEnvironment.js": "63fd610230e0ae59b757c451cd60776d03ac6cb9e5499c637052f4e1c6fa6808",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/geometries/TeapotGeometry.js": "20c0a8604f666b2dac771778a759102230bd5eb72c88b8db1ce6db9b9f0d4435",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/geometries/TextGeometry.js": "cf5a3d4f751bfe37b43712b24ad537eeb56a46b2ded35528e4cfde16923c0d99",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/helpers/LightProbeHelperGPU.js": "8745af0d31b53d5a35ea9fb6d002e71d7caf77d17413632929c6d76392b22665",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/helpers/RectAreaLightHelper.js": "accec7f31538818355089989a45e511e517898a719f89567c32b5a33121c68bc",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/helpers/TextureHelperGPU.js": "4e0dbffcbf0983a1970527e15bb120feed0d943ece06e0e1fa8bbd2fd6259bde",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/demuxer_mp4.js": "8dce48fc3ef10e2459fe127cbc2ac7a9b51d22c6b42e4c31a6377eaeefeda318",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/fflate.module.js": "209a4412eb48ce609edb4391992a792ffcc3983d30ee7e2b0b89a8c470f3cd8a",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/ktx-parse.module.js": "34a3a68f08db30a353802c5a762c5dcd89a168a1b56567019ef4a7563ceaf4d4",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/lil-gui.module.min.js": "5e31e7fc4d3a1268550b948463eabe06c7a6c03c158ccb99c78616d2c9682518",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/meshopt_decoder.module.js": "01f48524f4bac6141eaba07e94cc36e7ee56f311796fa6117c159842941b0468",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/potpack.module.js": "f69a7f3173b088188a936ef203da9fc74175dee3443ca7804a060b3f19efc6c8",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/stats.module.js": "2c71a2f70e89c69e46c2e285fb171bac3dcfd498a85400e94ad5aaf6044ffc06",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/tween.module.js": "b61c18c59bff9810f43d5750849fde620b225ff4e9013dc51bcece4b027d69a9",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/libs/zstddec.module.js": "5cbf818e842628a4464e748594a6deae18ceddda3c2f541e7b3a0ff5fc7611e2",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/lighting/TiledLighting.js": "6fddfcbe573e63fd82d1d730273e005b2e84b612c8ff56ddd2dc2f7ca4893ec1",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/lights/LightProbeGenerator.js": "f3e87cbbbbaedbae1e8705e3108a9024fa5095b922035d96a4f71a50df59970e",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/lights/RectAreaLightTexturesLib.js": "ac68038b062987475d9fe039151b497c73bbc4e590ee687ade20f5b44d191c7b",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/lines/LineGeometry.js": "55b880dc6b316317ebc52bc45b1690eb2c49b2e9aa5af5a2bc4f1e3034317e8b",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/lines/LineSegmentsGeometry.js": "21cbb63ebfa87216f9e174785c3c2ebb71aa52c930a64b2517f86768591e9e39",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/lines/WireframeGeometry2.js": "71568bf2a73cd0b49db459206ad65ba6bd48455485cf5c430ae986deb10a6dd0",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/lines/webgpu/Line2.js": "51d19a8dc9b105f859c2df0592a0c64d24a2253224d8c30c98d57349de8e6ce3",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/lines/webgpu/LineSegments2.js": "98fd5be57c5a9e4b08d34ae01d0859e4c2907c67564ec1224652a6840cdb3d8d",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/lines/webgpu/Wireframe.js": "7e85fff29a67d4bb2f815a7bd3c0100e0242ef6316f681ddcc2f646bab0e5b99",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/DRACOLoader.js": "edefb0d52a5c9e05129968d0bdb75cf91627f28f377b750ac9f21b3f7e0d3d12",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/EXRLoader.js": "5f89f9142530868d3b921a6510a0ac8e608959980d0e9548e419bf7592792a53",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/FBXLoader.js": "c386298658b577a3f2384c463ed2edd006887e21bf427707a33d0e52a2745b28",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/FontLoader.js": "f001be31b69fc7539d357c0d7d7d486482e81da8a18c500740dffbd7965196d4",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/GLTFLoader.js": "bde7c958c74e5771334d8eb627701e0aa31d40d91cbe174655bbcb94b199c86b",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/HDRCubeTextureLoader.js": "5502841fbe43dbfbda36bae370003d3a40062aa586951b3aa93dd67ab9b3d49f",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/IESLoader.js": "842c1a9629ae5f91daafc28b73081ca0c0a6ce9127bd59298189cb3089a3706d",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/KTX2Loader.js": "acc4dd91235e99f76d64afd8347cfb0e946360724851e3565706916da99c3aab",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/MaterialXLoader.js": "92581fcab4912d8955be6e085ba4a6fec153131c6907b7ec3faf1731bded8828",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/OBJLoader.js": "00ed4381871e9e12bf8c09594d24735369d5860b445fac433609cb10fdf0c0a8",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/PLYLoader.js": "ea31ecd64594db4acef9821011f50e7e420be6caca670652faa9501398315148",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/RGBELoader.js": "2ef20a56228ff90b628b0b85d44e833ba4a886d4fe343be340384e453fbfe10a",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/RGBMLoader.js": "1d28f49206befa0e574bdcfc0d7c7ae0e21838a2620598d9b608cb4b912d6cdf",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/loaders/UltraHDRLoader.js": "e0d585a0f0db5170079485350ec28b62271d3a3567aec7bd89da2875ce3c1c8a",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/math/ColorSpaces.js": "0d38cd31d6650232d3b1161e1d6ccba9cdec5d6e044c6a5c67bd50bbe79dd96e",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/math/ImprovedNoise.js": "f0c4a49107cfa426ab042a9415ac64b40f276d72611df17b16fc563e13766c23",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/math/SimplexNoise.js": "6e92fa66c146a2e423d47023bbb9bafd4481714abed866bf6b447fdd9f55e2d8",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/misc/ProgressiveLightMapGPU.js": "fa80acc67c458dab7d8b6d223660db8a7a786aebd30f238e866b7d78a92b7a23",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/misc/Timer.js": "3909af6f2b792f6cb2d93ebf8eb16bd184622d7f1ea7574adf2329e8d81889a0",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/modifiers/CurveModifierGPU.js": "76cfea6168f00e139de88b55eaed956262e3798e04f85bddac0631fe4413401b",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/objects/SkyMesh.js": "8e3748a26c22e325424c1bde0b24363aceabaa3cfe0e50ea1de9233ed5774457",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/objects/Water2Mesh.js": "12976bc4733cefc3795e66f3dba25563cd006e4ccb1de6f5b1f8e6956229a6f5",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/objects/WaterMesh.js": "c7270b7cafbaaffbcfd91e8fd042244e17dfe89ede8ad616086ddbabbfcc5968",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/textures/FlakesTexture.js": "f602c8c1ea0584bb1d5f79eff79a54eab2b3adde30fee6a68d98d3f82a20624c",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/transpiler/AST.js": "017ade33660f8ca6f3d067c03428f72a725a2814fb49f01ceee2ddfe005f4dd4",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/transpiler/GLSLDecoder.js": "4b77deeb647ce0e96c342130f5fc64150c66cd6ef115ba72163362d8c8e606ae",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/transpiler/TSLEncoder.js": "e28fe2a4386060a4be3d60fbb43a721054c84f72f09cf6fd13400b6f2bc478bb",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/transpiler/Transpiler.js": "8c5e3c07502fa4b83b654933bad22dd977e19f86a11ae154f6861e096710af59",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/AfterImageNode.js": "d4bc302701ac02d52762c598a992391abba9d59dbfebc04e74da3ad6c79b7fb3",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/AnamorphicNode.js": "b78ba13efd2234123b4e5bcedc8b8abf1e50180de22ee901fb5c5bc4835c5187",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/BloomNode.js": "32c172f25a56c4cb769388e694969e86a2ea10d2f8034501c909f1fe2099f3af",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/DenoiseNode.js": "874bd32cece95be7d958cead4c39014801bee3dad31651a8a3a9433da35e4dbc",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/DepthOfFieldNode.js": "e5b9437d49b1845adb22728d3b431db21cd3fda93b680626f018551ff7a8ae05",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/DotScreenNode.js": "f89d684a59b2481fa27ae43029c46164eb9691cdbe3d1d25ea09098ee51a6f46",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/FXAANode.js": "f77564054f9d8f2c26f9c130d5cf9a632e3885b64c91090ff1149a9482ee6b2c",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/GTAONode.js": "0a3570a41a6d417eb7658edc8f3d3f435fd185d9f968aba72ac3b2e1a7f29379",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/GaussianBlurNode.js": "b69494601ea736bb93c753167f413e953a92968912d1d2833999e7ed3a8d4e1e",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/LensflareNode.js": "41fb4dc081dd316e551429e972fc199a39f2d939ac74736601adbc018605b2bd",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/MotionBlur.js": "7646495fb9e43921bf62c660d6b30f881805130b12061d42c98430d79d31ac91",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/OutlineNode.js": "6eb80766e1e02a74690dcfc00b869682a610218b6d45e9d381c175abd232af6a",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/PixelationPassNode.js": "7be649d3a4154e6437e63366373cc7ca7ea64366adae27fa119a06769e82820f",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/RGBShiftNode.js": "84af4dbfe8f83a5e97418f1f0b653b44211ce1f7cb945748954407954878d21d",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/SMAANode.js": "2d81d1ce6d764690e1b18c9e30a5392a106bce864b222ee6c2c9e5c06d048d91",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/SSAAPassNode.js": "4d9679d06c76b971a0129e72fbcad06f61848e5f70d8ca6bfcf253cecdc82e02",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/SSRNode.js": "4dd977dbe06743d1084c9aeb94435a1f31348d383bb59f89327f65a65e96efaa",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/SobelOperatorNode.js": "ced57dcb6acbc257884230c5582f396bdadefec5c1f77f7bb1b5a484ec57d441",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/TRAAPassNode.js": "e73c603d9dd714ff0288c0d55f36baea02e358b444184e26abd9a987908b90dc",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/TransitionNode.js": "d29db3e45557b33b0da9f141dee77c3004c692404f3639ab8bebba11b87f3dd8",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/display/hashBlur.js": "f7431c5ce53e3fafec712a27e4b223afe73122213267ad88748972d536394c78",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/lighting/TiledLightsNode.js": "d6e526ad9dc936af6a0258297b4b719c5b5efa1c69b90853e46e436a4555face",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/tsl/math/Bayer.js": "b8b9815a24eec234541b73ee8744a85d9d6dfd09f8aaaa2c209b794369f1cf6f",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/BufferGeometryUtils.js": "f20050ae2eeea7cf6ef05775bf68d6de3aeffbaff362760edd8a9de9ac8500ca",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/GeometryUtils.js": "b9011c1fc0059af7428c9752223355e2070f4a93f37e267b3d2229ecfb221640",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/SkeletonUtils.js": "8c8b79ecbcdbf658d4d2626906dea249166165c47f7158c34d255deac63b4ec2",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/SortUtils.js": "d902411beb27dc091a3e7e989d4ea8acbabee38481fbd62e0f3a1ccab0a05629",
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/utils/WorkerPool.js": "60e6947167c8848565129c8e383585cff6812c7930098183012774ed2d01fc73",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.Core.js": "24fa17158ca447075da9e39e0a1d70ea185d0d10f17491aadb7d32285a4eb251",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.Legacy.js": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.TSL.js": "9f4ea8d87a8b5c280952a46e604af3d31f66638f0f730f9757385b26c0584d1c",
@@ -861,10 +793,6 @@
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/textures/VideoFrameTexture.js": "c4ec3a2f938fa884ef47b53aefb7686e3dbea6786d590b34e95ac17aad49d339",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/textures/VideoTexture.js": "2e615d73957fb65f32cfd32f8f1142a7e78275ab233d1d5b1c7fc101656ffa6f",
     "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/utils.js": "7dae752fe15d4ec70e804c5b69f37828396c80440bb5d12cc8ec2d069844bd8b",
-    "https://cdn.jsdelivr.net/npm/mp4box@0.5.3/+esm": "0b7274e947c9f1c5033316c0acd17e7456f322b26ec1424f33b2d3eed9a9d7db",
-    "https://cdn.jsdelivr.net/npm/stats-gl@3.6.0/dist/main.js": "786cdeac5c1974334781d5c095b819f6ec70abbda16c164704d2f5d6924078d6",
-    "https://cdn.jsdelivr.net/npm/stats-gl@3.6.0/dist/panel.js": "56cf8e3a52d456c419f77c5e69e777eb64eb71cc58554b27543f5cbe9c629f72",
-    "https://cdn.jsdelivr.net/npm/stats-gl@3.6.0/dist/panelVsync.js": "5ec76d17f72ae2e43c4be6d227d279b80c900434c6847a4499deba1af08f4ecc",
     "https://deno.land/x/get_pixels@v1.2.2/mod.ts": "5710900b4ef304edb0f8621d63419b927340ebdcafe67263cffd76669cfa0db8",
     "https://deno.land/x/get_pixels@v1.2.2/src/get-pixels.ts": "3f1101ffad7efdfb25863432990cff8eaf48261b76795f04da76cdfd2f37cc9d",
     "https://deno.land/x/jpegts@1.1/lib/decoder.ts": "b8823ee917fc99a1e085c353b2cd4ca1fbaacaaf1f80be94175e42487666c822",
@@ -876,18 +804,18 @@
     "https://deno.land/x/lz4@v0.1.2/wasm.js": "b9c65605327ba273f0c76a6dc596ec534d4cda0f0225d7a94ebc606782319e46",
     "https://deno.land/x/pngs@0.1.1/mod.ts": "9dc8a7daed1497b94a77b68c954164a9f0b2a6f40866481bdfdbbaf015b5f764",
     "https://deno.land/x/pngs@0.1.1/wasm.js": "e3d4a8f293b267c9859a2164ca7b4603869bc92fe0d5ad4f109925858bce0c4c",
-    "https://esm.sh/destr@2.0.3/denonext/destr.mjs": "240741b1b6b038a1a4b6f0d1f0894bb7751ae5f27c70a627a80d11b29e4b8166",
-    "https://esm.sh/destr@2.0.3?target=denonext": "12a41fa29ab1b4b7f1e5b2609bf54c68c32f97579528ed2af3669a0101f28ce1",
+    "https://esm.sh/destr@2.0.5/denonext/destr.mjs": "228e13dbaf710326ff1fd6169ac9703becd7857fac1be1ddb92c1c07e0246c25",
+    "https://esm.sh/destr@2.0.5?target=denonext": "9977494da96d0b916cfac7d5e1feede2eca7b6f2dcc450a0067896760a560110",
     "https://esm.sh/ofetch@1.3.3": "e81d138881759f3d98db6b06cd7fcbe36e5a3e0ec662fd1bcfae97dd83b5f966",
     "https://esm.sh/ofetch@1.3.3/denonext/dist/shared/ofetch.00501375.mjs": "390934aa3e2e767735a89a33a562ac240cf415b0cebd0ee49634be9762a5808a",
     "https://esm.sh/ofetch@1.3.3/denonext/ofetch.mjs": "948ad536693f765ddb86336c28ee921df9276ce9a83e53a255420892e15d8baa",
-    "https://esm.sh/ufo@1.5.4/denonext/ufo.mjs": "ab875c1c116435fdb1c7575cbf75c457149cbe78fba6aea594c8179c0f13865a",
-    "https://esm.sh/ufo@1.5.4?target=denonext": "b23d0436c652eb7abb6e4704863858c5296f2c70943ff2d932f7a212fd041dd5"
+    "https://esm.sh/ufo@1.6.1/denonext/ufo.mjs": "f9cdc09182efa6f724e6ac1a3cf1a50b158e8c087dd7e01ad0d9598c48049e4a",
+    "https://esm.sh/ufo@1.6.1?target=denonext": "ce9a83d38351df5e0b552d66f68c3a115be674ea7c9951c80e66b14cbf4c1762"
   },
   "workspace": {
     "dependencies": [
-      "jsr:@divy/sdl2@0.14.0",
-      "npm:linkedom@0.18.4"
+      "jsr:@divy/sdl2@0.15.0",
+      "npm:linkedom@0.18.12"
     ]
   }
 }
