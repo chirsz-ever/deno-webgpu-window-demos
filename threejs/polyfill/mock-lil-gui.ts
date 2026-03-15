@@ -26,6 +26,8 @@ export class GUI extends IliGUI {
     /** True while the GUI has captured the mouse (press started on GUI). */
     static _mouseCaptured = false;
 
+    domElement = { style: {} };
+
     constructor(options: GUIOptions = {}) {
         if (!options.parent) {
             if (!GUI._renderer) {
