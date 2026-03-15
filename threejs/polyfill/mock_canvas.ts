@@ -1,5 +1,5 @@
 // for canvas.getContext("2d")
-import { createCanvas, type Canvas as Canvas2d, type SKRSContext2D, ImageData as ImageData2d } from 'npm:@napi-rs/canvas';
+import { createCanvas, type Canvas as Canvas2d, type SKRSContext2D, ImageData as ImageData2d } from 'napi-rs/canvas';
 
 import * as linkedom from "linkedom";
 import { currentDevice } from "./hook_webgpu.ts";

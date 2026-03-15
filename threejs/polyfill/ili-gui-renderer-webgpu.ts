@@ -1,6 +1,6 @@
 // ili-gui WebGPU renderer: draws GUI using @napi-rs/canvas for text, then composites onto WebGPU surface
 
-import { createCanvas, type Canvas as Canvas2d, type SKRSContext2D } from 'npm:@napi-rs/canvas';
+import { createCanvas, type Canvas as Canvas2d, type SKRSContext2D } from 'napi-rs/canvas';
 import type { GUIRenderer, TextMetrics, ClipRect } from './ili-gui.ts';
 import { currentDevice } from './hook_webgpu.ts';
 import { currentContextMock } from './mock_canvas.ts';

@@ -9,7 +9,8 @@
         "deno_sdl2": "jsr:@divy/sdl2@0.15.0",
         "stats-gl": "https://cdn.jsdelivr.net/npm/stats-gl@3.6.0/dist/main.js",
         "linkedom": "npm:linkedom@0.18.12",
-        "three/addons/libs/lil-gui.module.min.js": "./threejs/polyfill/mock-lil-gui.ts"
+        "three/addons/libs/lil-gui.module.min.js": "./threejs/polyfill/mock-lil-gui.ts",
+        "napi-rs/canvas": "npm:@napi-rs/canvas@0.1.96"
     },
     "unstable": [
         "webgpu",
