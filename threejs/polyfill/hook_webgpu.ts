@@ -70,7 +70,7 @@ interface GPUQueueExt {
     _copySize: GPUExtent3D
 ) {
     // TODO: handle rgba8unorm-srgb
-    let imgData: Uint8ClampedArray | Uint8Array;
+    let imgData;
     let width: number;
     let height: number;
     const source = sourceOptions.source;
@@ -101,6 +101,10 @@ interface GPUQueueExt {
         throw new TypeError("not support call GPUQueue.copyExternalImageToTexture with that source");
     }
 
+    if (!imgData) {
+        throw new Error("copyExternalImageToTexture: cannot get image data from source");
+    }
+
     if (imgData.length !== 4 * width * height) {
         if (imgData.length === 3 * width * height) {
             // Hack: RGB8 -> RGBA8
@@ -120,7 +124,7 @@ interface GPUQueueExt {
     }
 
     // suppose to RGBA8 format
-    this.writeTexture(destination, imgData, {
+    this.writeTexture(destination, imgData as ArrayBufferView<ArrayBuffer>, {
         offset: 0,
         bytesPerRow: 4 * width,
         rowsPerImage: height,

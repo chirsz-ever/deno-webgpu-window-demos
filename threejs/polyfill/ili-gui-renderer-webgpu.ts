@@ -4,6 +4,7 @@ import { createCanvas, type Canvas as Canvas2d, type SKRSContext2D } from 'npm:@
 import type { GUIRenderer, TextMetrics, ClipRect } from './ili-gui.ts';
 import { currentDevice } from './hook_webgpu.ts';
 import { currentContextMock } from './mock_canvas.ts';
+import type { Buffer } from "node:buffer";
 
 const overlayShader = /* wgsl */ `
 struct VertexOutput {
@@ -94,7 +95,7 @@ export class WebGPURenderer implements GUIRenderer {
 
         device.queue.writeTexture(
             { texture: this._gpuTexture },
-            this._canvas.data(),
+            this._canvas.data() as Buffer<ArrayBuffer>,
             { bytesPerRow: this._width * 4 },
             [this._width, this._height],
         );
