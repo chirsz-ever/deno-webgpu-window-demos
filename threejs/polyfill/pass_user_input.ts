@@ -1,6 +1,7 @@
 import { EventType, getKeyName } from "deno_sdl2";
 import { onScreenCanvas } from "./mock_canvas.ts";
 import { Event } from "linkedom";
+import { GUI } from "./mock-lil-gui.ts";
 
 class MouseEvent extends Event {
     altKey: boolean = false;
@@ -110,25 +111,60 @@ export function processUserInput(event: any): boolean {
             } else if (kname === "F1") {
                 Deno.exit(1)
             }
+            const s = GUI._inputState;
+            s.keysPressed!.push(kname);
+            break;
+        } else if (event.type === EventType.TextInput) {
+            GUI._inputState.textInput! += event.text;
             break;
         } else if (event.type == EventType.MouseButtonDown) {
-            dispatchPointerEvent("down", event.x, event.y, 1);
+            {
+                const s = GUI._inputState;
+                s.mouseX = event.x;
+                s.mouseY = event.y;
+                s.mouseDown = true;
+                s.mousePressed = true;
+            }
+            if (GUI._isMouseOverGUI(event.x, event.y)) {
+                GUI._mouseCaptured = true;
+            } else {
+                dispatchPointerEvent("down", event.x, event.y, 1);
+            }
             button0 = 1;
             break;
         } else if (event.type == EventType.MouseButtonUp) {
-            dispatchPointerEvent("up", event.x, event.y, 0);
+            {
+                const s = GUI._inputState;
+                s.mouseX = event.x;
+                s.mouseY = event.y;
+                s.mouseDown = false;
+                s.mouseReleased = true;
+            }
+            if (!GUI._mouseCaptured) {
+                dispatchPointerEvent("up", event.x, event.y, 0);
+            }
             button0 = 0;
             break;
         } else if (event.type == EventType.MouseMotion) {
-            dispatchPointerEvent("move", event.x, event.y, button0);
+            {
+                const s = GUI._inputState;
+                s.mouseX = event.x;
+                s.mouseY = event.y;
+            }
+            if (!GUI._mouseCaptured) {
+                dispatchPointerEvent("move", event.x, event.y, button0);
+            }
             break;
         } else if (event.type == EventType.MouseWheel) {
-            const evt = new WheelEvent("wheel");
-            evt.deltaX = event.x * 120;
-            evt.deltaY = event.y * 120;
-            evt.deltaMode = evt.DOM_DELTA_PIXEL;
-            setMouseEventXY(evt, lastMousePos?.x ?? 0, lastMousePos?.y ?? 0);
-            onScreenCanvas?.dispatchEvent(evt);
+            GUI._inputState.wheelDelta = event.y * 30;
+            if (!GUI._isMouseOverGUI(lastMousePos?.x ?? 0, lastMousePos?.y ?? 0)) {
+                const evt = new WheelEvent("wheel");
+                evt.deltaX = event.x * 120;
+                evt.deltaY = event.y * 120;
+                evt.deltaMode = evt.DOM_DELTA_PIXEL;
+                setMouseEventXY(evt, lastMousePos?.x ?? 0, lastMousePos?.y ?? 0);
+                onScreenCanvas?.dispatchEvent(evt);
+            }
             break;
         }
         return false;

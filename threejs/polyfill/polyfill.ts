@@ -10,6 +10,7 @@ import { currentDevice } from "./hook_webgpu.ts";
 import { CanvasDomMock, currentContextMock } from "./mock_canvas.ts";
 import { requestAnimationFrameCallbacks } from "./mock_dom.ts";
 import { processUserInput } from "./pass_user_input.ts";
+import { GUI } from "./mock-lil-gui.ts";
 
 const INIT_WIDTH = 1000;
 const INIT_HEIGHT = 750;
@@ -65,6 +66,8 @@ export async function runWindowEventLoop() {
                 if (VALIDATION)
                     currentDevice?.pushErrorScope("validation");
 
+                GUI._beginFrame();
+
                 const currentCallbacks = [...requestAnimationFrameCallbacks];
                 requestAnimationFrameCallbacks.length = 0;
                 const t = performance.now();
@@ -74,6 +77,9 @@ export async function runWindowEventLoop() {
                 }
 
                 CanvasDomMock._drawCanvas();
+
+                GUI._drawAll();
+                GUI._endFrame();
 
                 currentContextMock?._present();
 
