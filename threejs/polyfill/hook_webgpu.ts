@@ -135,18 +135,28 @@ if (!Object.hasOwn(GPUDevice.prototype, 'lost')) {
 let s_data: symbol;
 
 // HACK: internal deno, because deno do not support decode image.
-function getImageBitmapData(bitmap: ImageBitmap): Uint8Array {
+function getImageBitmapData(bitmap: ImageBitmap): Uint8Array | undefined {
     if (s_data === undefined) {
         for (const s of Object.getOwnPropertySymbols(bitmap)) {
+            console.log(`symbol: ${s.description}`);
             switch (s.description) {
                 case "[[bitmapData]]":
                     s_data = s;
                     break;
             }
         }
+        if (s_data === undefined) {
+            s_data = Symbol.for("Deno_bitmapData");
+        }
     }
-    // @ts-ignore: inner data
-    return bitmap[s_data]
+    if (s_data.description === "[[bitmapData]]") {
+        // @ts-ignore: inner data
+        return bitmap[s_data];
+    } else {
+        // Deno_bitmapData
+        // @ts-ignore: inner data
+        return bitmap[s_data]();
+    }
 }
 
 // Error: This operation is currently not supported
