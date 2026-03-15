@@ -57,9 +57,9 @@ export async function runWindowEventLoop() {
 
             if (size_changed) {
                 size_changed = false;
-                requestAnimationFrameCallbacks.unshift(() => {
+                requestAnimationFrameCallbacks.unshift([() => {
                     (window).dispatchEvent(new Event("resize"));
-                });
+                }, -1]);
             }
 
             if (requestAnimationFrameCallbacks.length > 0) {
@@ -73,7 +73,7 @@ export async function runWindowEventLoop() {
                 const t = performance.now();
                 while (currentCallbacks.length != 0) {
                     const callback = currentCallbacks.shift();
-                    callback!(t);
+                    callback![0](t);
                 }
 
                 CanvasDomMock._drawCanvas();

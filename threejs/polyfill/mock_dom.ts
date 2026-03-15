@@ -25,7 +25,7 @@ declare global {
     var devicePixelRatio: number;
 
     function requestAnimationFrame(callback: FrameRequestCallback): number;
-    // function cancelAnimationFrame(_: number): void;
+    function cancelAnimationFrame(id: number): void;
 }
 
 globalThis.DOMParser = linkedom.DOMParser;
@@ -40,11 +40,19 @@ globalThis.Image = window.Image;
 window.location = location || { search: '' } as Location;
 
 type FrameRequestCallback = (time: number) => void;
-export const requestAnimationFrameCallbacks: FrameRequestCallback[] = [];
+let requestAnimationFrameId = 0
+export const requestAnimationFrameCallbacks: [FrameRequestCallback, number][] = [];
 globalThis.requestAnimationFrame = (callback: FrameRequestCallback) => {
     // console.trace("window.requestAnimationFrame()");
-    requestAnimationFrameCallbacks.push(callback);
-    return 0;
+    requestAnimationFrameCallbacks.push([callback, requestAnimationFrameId]);
+    return requestAnimationFrameId++;
+}
+
+globalThis.cancelAnimationFrame = (id: number) => {
+    const idx = requestAnimationFrameCallbacks.findIndex(c => c[1] === id);
+    if (idx !== -1) {
+        requestAnimationFrameCallbacks.splice(idx, 1);
+    }
 }
 
 document.createElementNS = function createElementNS(_namespaceURI: string, qualifiedName: string) {
