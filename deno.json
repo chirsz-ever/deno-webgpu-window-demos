@@ -1,16 +1,17 @@
 {
     "imports": {
+        "deno_sdl2": "jsr:@divy/sdl2@0.15.0",
+        "linkedom": "npm:linkedom@0.18.12",
+        "napi-rs/canvas": "npm:@napi-rs/canvas@0.1.96",
+        "stats-gl": "https://cdn.jsdelivr.net/npm/stats-gl@3.6.0/dist/main.js",
         "three": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.WebGPU.js",
-        "three/webgpu": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.WebGPU.js",
         "three/addons": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/Addons.js",
         "three/addons/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/",
+        "three/addons/capabilities/WebGPU.js": "./threejs/polyfill/WebGPU.js",
+        "three/addons/libs/lil-gui.module.min.js": "./threejs/polyfill/mock-lil-gui.ts",
         "three/src/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/",
         "three/tsl": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.TSL.js",
-        "deno_sdl2": "jsr:@divy/sdl2@0.15.0",
-        "stats-gl": "https://cdn.jsdelivr.net/npm/stats-gl@3.6.0/dist/main.js",
-        "linkedom": "npm:linkedom@0.18.12",
-        "three/addons/libs/lil-gui.module.min.js": "./threejs/polyfill/mock-lil-gui.ts",
-        "napi-rs/canvas": "npm:@napi-rs/canvas@0.1.96"
+        "three/webgpu": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.WebGPU.js"
     },
     "unstable": [
         "webgpu",
