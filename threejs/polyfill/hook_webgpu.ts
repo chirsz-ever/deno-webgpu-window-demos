@@ -128,7 +128,7 @@ interface GPUQueueExt {
 };
 
 // https://github.com/denoland/deno/issues/28521
-if (typeof GPUDevice.prototype.lost === 'undefined') {
+if (!Object.hasOwn(GPUDevice.prototype, 'lost')) {
     (GPUDevice.prototype as { lost: Promise<GPUDeviceLostInfo> }).lost = new Promise(() => { });
 }
 
