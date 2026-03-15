@@ -1,6 +1,5 @@
 import { WebGPURenderer } from "./ili-gui-renderer-webgpu.ts";
 import { GUI as IliGUI, type GUIOptions, type InputState } from "./ili-gui.ts";
-import { currentContextMock } from "./mock_canvas.ts";
 
 export class GUI extends IliGUI {
     /** All root GUI instances (non-folder GUIs). */
@@ -51,7 +50,7 @@ export class GUI extends IliGUI {
         if (idx !== -1) GUI._instances.splice(idx, 1);
     }
 
-    /** Check if a point is over any GUI panel or the GUI has captured the mouse. */
+    /** Check if a point is over any GUI panel, overlay, or the GUI has captured the mouse. */
     static _isMouseOverGUI(x: number, y: number): boolean {
         if (GUI._mouseCaptured) return true;
         for (const area of GUI._guiAreas) {
@@ -75,18 +74,19 @@ export class GUI extends IliGUI {
         renderer.beginFrame();
 
         GUI._guiAreas.length = 0;
-        let x = window.innerWidth - 250;
+        // Position GUIs from right edge of window, using _width from previous frame
+        let right = window.innerWidth;
         for (const gui of GUI._instances) {
+            const x = right - gui._width;
             gui.update(GUI._inputState, x, 0, window.innerHeight);
-            GUI._guiAreas.push({ x, y: 0, w: gui._width, h: gui._visibleHeight });
-            x -= gui._width + 4;
+            GUI._guiAreas.push({ x: gui._x, y: 0, w: gui._width, h: gui._visibleHeight });
+            for (const oa of gui._overlayAreas) {
+                GUI._guiAreas.push(oa);
+            }
+            right = gui._x - 4;
         }
 
-        // Only composite to GPU if the scene actually rendered this frame,
-        // otherwise flush() would call getCurrentTexture() on an empty surface.
-        if (currentContextMock?._currentTextureGot) {
-            renderer.flush();
-        }
+        renderer.flush();
     }
 
     /** Call once per frame after _drawAll to reset per-frame input state. */

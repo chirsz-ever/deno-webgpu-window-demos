@@ -62,10 +62,10 @@ export async function runWindowEventLoop() {
                 }, -1]);
             }
 
-            if (requestAnimationFrameCallbacks.length > 0) {
-                if (VALIDATION)
-                    currentDevice?.pushErrorScope("validation");
+            if (VALIDATION)
+                currentDevice?.pushErrorScope("validation");
 
+            if (requestAnimationFrameCallbacks.length > 0) {
                 const currentCallbacks = [...requestAnimationFrameCallbacks];
                 requestAnimationFrameCallbacks.length = 0;
                 const t = performance.now();
@@ -73,22 +73,32 @@ export async function runWindowEventLoop() {
                     const callback = currentCallbacks.shift();
                     callback![0](t);
                 }
+            }
 
-                GUI._beginFrame();
-                CanvasDomMock._drawCanvas();
-                GUI._drawAll();
-                GUI._endFrame();
+            // If scene rendered this frame (in rAF or externally), save for static frames.
+            // Otherwise, restore last frame so GUI can overlay on it.
+            if (currentContextMock?._currentTextureGot) {
+                currentContextMock._save_last();
+            } else {
+                currentContextMock?._render_last();
+            }
 
-                currentContextMock?._present();
+            CanvasDomMock._drawCanvas();
 
-                if (VALIDATION) {
-                    currentDevice?.popErrorScope().then((error) => {
-                        if (error) {
-                            console.error(`WebGPU validation error: ${error.message}`);
-                            Deno.exit(1);
-                        }
-                    });
-                }
+            // Always update and draw GUI, even if no rAF callbacks ran this frame
+            GUI._beginFrame();
+            GUI._drawAll();
+            GUI._endFrame();
+
+            currentContextMock?._present();
+
+            if (VALIDATION) {
+                currentDevice?.popErrorScope().then((error) => {
+                    if (error) {
+                        console.error(`WebGPU validation error: ${error.message}`);
+                        Deno.exit(1);
+                    }
+                });
             }
 
             // FIXME: deno_sdl2 UI events would block network events?

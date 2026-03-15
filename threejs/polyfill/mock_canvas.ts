@@ -4,6 +4,7 @@ import { createCanvas, type Canvas as Canvas2d, type SKRSContext2D, ImageData as
 import * as linkedom from "linkedom";
 import { currentDevice } from "./hook_webgpu.ts";
 import { SimpleDrawer } from "./simple_draw.ts";
+import type { Buffer } from "node:buffer";
 
 let canvasCount = 0;
 export let currentContextMock: GPUCanvasContextMock | undefined;
@@ -91,7 +92,7 @@ export class CanvasDomMock extends linkedom.HTMLElement {
         }
         currentDevice.queue.writeTexture(
             { texture: this._gpuTexture },
-            this._canvas2d.data(),
+            this._canvas2d.data() as Buffer<ArrayBuffer>,
             { bytesPerRow: this._canvas2d.width * 4 },
             [this._canvas2d.width, this._canvas2d.height],
         );
@@ -177,6 +178,8 @@ class GPUCanvasContextMock implements GPUCanvasContext {
     #configuration?: GPUCanvasConfiguration;
     // avoid present without draw
     _currentTextureGot = false;
+    #lastFrameBackup: GPUTexture | undefined;
+    #lastFrameDrawer: SimpleDrawer | undefined;
 
     configure(configuration: GPUCanvasConfiguration): undefined {
         // WORKAROUND: Error: Surface is not configured for presentation
@@ -208,10 +211,46 @@ class GPUCanvasContextMock implements GPUCanvasContext {
         this.#context = context;
     }
 
+    _save_last() {
+        if (currentDevice) {
+            const src = this.#context.getCurrentTexture();
+            if (!this.#lastFrameBackup
+                || this.#lastFrameBackup.width !== src.width
+                || this.#lastFrameBackup.height !== src.height
+                || this.#lastFrameBackup.format !== src.format) {
+                this.#lastFrameBackup?.destroy();
+                this.#lastFrameBackup = currentDevice.createTexture({
+                    format: src.format,
+                    size: [src.width, src.height],
+                    usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+                    label: 'last-frame-backup',
+                });
+                this.#lastFrameDrawer = new SimpleDrawer(
+                    currentDevice, this.#lastFrameBackup, src.format,
+                );
+            }
+            const enc = currentDevice.createCommandEncoder();
+            enc.copyTextureToTexture(
+                { texture: src }, { texture: this.#lastFrameBackup },
+                [src.width, src.height],
+            );
+            currentDevice.queue.submit([enc.finish()]);
+        }
+    }
+
     _present() {
         if (this._currentTextureGot) {
+            // Backup current frame before presenting
+
             CanvasDomMock._surface.present();
             this._currentTextureGot = false;
         }
+    }
+
+    /** Re-present the last frame's content onto the current surface texture. */
+    _render_last() {
+        if (!currentDevice || !this.#lastFrameBackup || !this.#lastFrameDrawer) return;
+        const dst = this.getCurrentTexture();
+        this.#lastFrameDrawer.render(dst, [0, 0, dst.width, dst.height]);
     }
 }

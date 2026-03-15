@@ -60,6 +60,8 @@ export interface InputState {
 
 export interface GUIOptions {
   width?: number;
+  minWidth?: number;
+  maxWidth?: number;
   title?: string;
   closeFolders?: boolean;
   parent?: GUI;
@@ -106,6 +108,53 @@ const Theme = {
   scrollbarHoverColor: '#777777',
   indentWidth: 10,
 };
+
+// ============================================================================
+// Drawing helpers (no Unicode text – use rects to draw shapes)
+// ============================================================================
+
+/** Draw a small triangle arrow (right-pointing if collapsed, down-pointing if open) */
+function _drawArrow(renderer: GUIRenderer, x: number, cy: number, collapsed: boolean, color: string) {
+  const s = 4; // half-size
+  if (collapsed) {
+    // Right-pointing triangle: 3 horizontal lines
+    for (let i = 0; i <= s; i++) {
+      renderer.fillRect(x + i, cy - s + i, 1, (s - i) * 2 + 1, color);
+    }
+  } else {
+    // Down-pointing triangle: 3 horizontal lines
+    for (let i = 0; i <= s; i++) {
+      renderer.fillRect(x - s + i, cy + i, (s - i) * 2 + 1, 1, color);
+    }
+  }
+}
+
+/** Draw a checkmark inside a checkbox */
+function _drawCheckmark(renderer: GUIRenderer, bx: number, by: number, boxSize: number, color: string) {
+  // Simple checkmark as two diagonal strokes
+  const cx = bx + boxSize * 0.25;
+  const cy = by + boxSize * 0.55;
+  // Descending stroke (left part of check)
+  for (let i = 0; i < 3; i++) {
+    renderer.fillRect(cx + i, cy - 2 + i, 2, 2, color);
+  }
+  // Ascending stroke (right part of check)
+  for (let i = 0; i < 6; i++) {
+    renderer.fillRect(cx + 2 + i, cy + 0 - i, 2, 2, color);
+  }
+}
+
+/** Draw up/down arrows for dropdown indicator */
+function _drawUpDownArrows(renderer: GUIRenderer, cx: number, cy: number, color: string) {
+  // Up arrow
+  for (let i = 0; i < 3; i++) {
+    renderer.fillRect(cx - i, cy - 5 + i, i * 2 + 1, 1, color);
+  }
+  // Down arrow
+  for (let i = 0; i < 3; i++) {
+    renderer.fillRect(cx - i, cy + 5 - i, i * 2 + 1, 1, color);
+  }
+}
 
 // ============================================================================
 // Color utility
@@ -487,10 +536,15 @@ export class GUI {
   _onFinishChange: ((event: ChangeEvent) => void) | undefined;
   _onOpenClose: ((gui: GUI) => void) | undefined;
   _width: number;
+  _minWidth: number;
+  _maxWidth: number;
   _closeFolders: boolean;
 
   // Renderer (only on root)
   _renderer: GUIRenderer | undefined;
+
+  /** Overlay rects (color picker, dropdown) computed during update, for external hit-testing. */
+  _overlayAreas: { x: number; y: number; w: number; h: number }[] = [];
 
   // Layout state (computed during draw)
   _x: number = 0;
@@ -512,6 +566,8 @@ export class GUI {
 
   constructor(options: GUIOptions = {}) {
     this._width = options.width ?? 245;
+    this._minWidth = options.minWidth ?? 180;
+    this._maxWidth = options.maxWidth ?? 400;
     this._title = options.title ?? 'Controls';
     this._closeFolders = options.closeFolders ?? false;
     this.parent = options.parent;
@@ -817,6 +873,16 @@ export class GUI {
 
     const renderer = this._getRenderer();
 
+    // Dynamic width: skip recalculation while any controller is being interacted with
+    // to prevent layout jitter during slider dragging or text editing
+    const interacting = this._activeController != null || this._focusedController != null
+      || this._colorPickerActive != null
+      || this.controllersRecursive().some(c => c._sliderDragging || c._editing || c._dropdownOpen);
+    if (!interacting) {
+      this._width = this._calcAutoWidth(renderer);
+    }
+    this._overlayAreas = [];
+
     // Calculate content height
     this._contentHeight = this._calcContentHeight();
     this._visibleHeight = Math.min(this._contentHeight, this._maxVisibleHeight);
@@ -860,6 +926,9 @@ export class GUI {
       this._drawScrollbar(renderer, input);
     }
 
+    // Draw border around the whole GUI panel
+    renderer.strokeRect(this._x, this._y, this._width, this._visibleHeight, Theme.borderColor, 1);
+
     // Draw color picker overlay if active
     if (this._colorPickerActive && this._colorPickerActive._colorPickerOpen) {
       this._drawColorPicker(this._colorPickerActive, input, renderer);
@@ -884,6 +953,43 @@ export class GUI {
     return this._calcGUIHeight(this);
   }
 
+  /** Calculate auto width based on content text, clamped to [minWidth, maxWidth] */
+  private _calcAutoWidth(renderer: GUIRenderer): number {
+    let maxNameW = 0;
+
+    // Measure title
+    const titleW = renderer.measureText(this._title, Theme.titleFontSize).width + Theme.padding * 2 + 14;
+
+    const measureGUI = (gui: GUI, depth: number) => {
+      const indent = depth * Theme.indentWidth;
+      const tW = renderer.measureText(gui._title, Theme.titleFontSize).width + Theme.padding * 2 + 14 + indent;
+      if (tW > maxNameW) {
+        maxNameW = tW;
+      }
+      if (gui._closed) return;
+      for (const child of gui.children) {
+        if (child instanceof Controller && !child._hidden) {
+          const nw = renderer.measureText(child._name, Theme.fontSize).width + indent;
+          if (nw > maxNameW) maxNameW = nw;
+          // For option controllers, measure option labels (they are stable)
+          if (child._type === 'option') {
+            for (const label of child._optionLabels) {
+              const lw = renderer.measureText(label, Theme.fontSize).width;
+              if (lw > maxNameW) maxNameW = lw;
+            }
+          }
+        } else if (child instanceof GUI && !child._hidden) {
+          measureGUI(child, depth + 1);
+        }
+      }
+    };
+    measureGUI(this, 0);
+
+    // Width = name area / nameWidth fraction. Add padding for widget area.
+    const computed = Math.max(titleW, maxNameW / Theme.nameWidth + Theme.padding * 2);
+    return Math.max(this._minWidth, Math.min(this._maxWidth, Math.round(computed)));
+  }
+
   private _calcGUIHeight(gui: GUI): number {
     let h = Theme.titleBarHeight; // title bar
     if (!gui._closed) {
@@ -904,7 +1010,6 @@ export class GUI {
     const isFolder = gui.parent !== undefined;
 
     if (isFolder) {
-      // Folder title: aligned with parent's content level
       const titleBarColor = this._isHovered(input, x, titleBarY, width, Theme.titleBarHeight)
         ? Theme.titleBarHoverColor
         : Theme.backgroundColor;
@@ -912,10 +1017,12 @@ export class GUI {
       renderer.fillRect(x, titleBarY, width, 1, Theme.borderColor);
       renderer.fillRect(x, titleBarY + Theme.titleBarHeight - 1, width, 1, Theme.borderColor);
 
-      const arrow = gui._closed ? '▸ ' : '▾ ';
+      const arrowX = x + Theme.padding;
+      const arrowCY = titleBarY + Theme.titleBarHeight / 2;
+      _drawArrow(renderer, arrowX, arrowCY, gui._closed, Theme.textColor);
       renderer.fillText(
-        arrow + gui._title,
-        x + Theme.padding,
+        gui._title,
+        arrowX + 12,
         titleBarY + Theme.titleBarHeight / 2 + Theme.titleFontSize * 0.35,
         Theme.textColor,
         Theme.titleFontSize,
@@ -926,16 +1033,17 @@ export class GUI {
         gui.open(gui._closed);
       }
     } else {
-      // Root title bar
       const titleBarColor = this._isHovered(input, x, titleBarY, width, Theme.titleBarHeight)
         ? Theme.titleBarHoverColor
         : Theme.titleBarColor;
       renderer.fillRect(x, titleBarY, width, Theme.titleBarHeight, titleBarColor);
 
-      const arrow = gui._closed ? '▸ ' : '▾ ';
+      const arrowX = x + Theme.padding;
+      const arrowCY = titleBarY + Theme.titleBarHeight / 2;
+      _drawArrow(renderer, arrowX, arrowCY, gui._closed, Theme.textColor);
       renderer.fillText(
-        arrow + gui._title,
-        x + Theme.padding,
+        gui._title,
+        arrowX + 12,
         titleBarY + Theme.titleBarHeight / 2 + Theme.titleFontSize * 0.35,
         Theme.textColor,
         Theme.titleFontSize,
@@ -1051,8 +1159,7 @@ export class GUI {
     renderer.strokeRect(bx, by, boxSize, boxSize, Theme.borderColor, 1);
 
     if (checked) {
-      // Draw checkmark with text
-      renderer.fillText('✓', bx + boxSize / 2, by + boxSize / 2 + 4, '#ffffff', 11, 'center');
+      _drawCheckmark(renderer, bx, by, boxSize, '#ffffff');
     }
 
     if (!ctrl._disabled && input.mousePressed && this._isHovered(input, bx, by, boxSize, boxSize)) {
@@ -1312,8 +1419,8 @@ export class GUI {
     );
     renderer.popClip();
 
-    // Dropdown arrow
-    renderer.fillText('↕', x + fieldW - 14, y + h / 2 + Theme.fontSize * 0.35, Theme.textMutedColor, Theme.fontSize, 'center');
+    // Dropdown arrow (up/down)
+    _drawUpDownArrows(renderer, x + fieldW - 14, y + h / 2, Theme.textMutedColor);
 
     // Click to open dropdown
     if (!ctrl._disabled && input.mousePressed && this._isHovered(input, x, fieldY, fieldW, fieldH)) {
@@ -1330,7 +1437,6 @@ export class GUI {
   private _drawDropdownOverlay(
     ctrl: Controller, input: InputState, renderer: GUIRenderer,
   ) {
-    // We need to find the screen position of this controller
     const pos = this._findControllerPosition(ctrl);
     if (!pos) { ctrl._dropdownOpen = false; return; }
 
@@ -1343,6 +1449,9 @@ export class GUI {
     const itemH = Theme.rowHeight;
     const count = ctrl._optionLabels.length;
     const dropdownH = count * itemH;
+
+    // Track overlay area for external hit-testing
+    this._overlayAreas.push({ x: widgetX, y: dropdownY, w: widgetW, h: dropdownH });
 
     // Background
     renderer.fillRect(widgetX, dropdownY, widgetW, dropdownH, '#2a2a2a');
@@ -1435,6 +1544,9 @@ export class GUI {
     const hueBarH = 16;
     const px = pos.x + pos.width - pickerW;
     const py = pos.y + Theme.rowHeight + 2;
+
+    // Track overlay area for external hit-testing
+    this._overlayAreas.push({ x: px, y: py, w: pickerW, h: pickerH });
 
     // Background
     renderer.fillRect(px, py, pickerW, pickerH, '#1a1a1a');
