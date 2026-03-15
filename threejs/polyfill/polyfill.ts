@@ -66,8 +66,6 @@ export async function runWindowEventLoop() {
                 if (VALIDATION)
                     currentDevice?.pushErrorScope("validation");
 
-                GUI._beginFrame();
-
                 const currentCallbacks = [...requestAnimationFrameCallbacks];
                 requestAnimationFrameCallbacks.length = 0;
                 const t = performance.now();
@@ -76,8 +74,8 @@ export async function runWindowEventLoop() {
                     callback![0](t);
                 }
 
+                GUI._beginFrame();
                 CanvasDomMock._drawCanvas();
-
                 GUI._drawAll();
                 GUI._endFrame();
 

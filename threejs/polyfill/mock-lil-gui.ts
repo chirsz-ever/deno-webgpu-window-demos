@@ -1,5 +1,6 @@
 import { WebGPURenderer } from "./ili-gui-renderer-webgpu.ts";
 import { GUI as IliGUI, type GUIOptions, type InputState } from "./ili-gui.ts";
+import { currentContextMock } from "./mock_canvas.ts";
 
 export class GUI extends IliGUI {
     /** All root GUI instances (non-folder GUIs). */
@@ -81,7 +82,11 @@ export class GUI extends IliGUI {
             x -= gui._width + 4;
         }
 
-        renderer.flush();
+        // Only composite to GPU if the scene actually rendered this frame,
+        // otherwise flush() would call getCurrentTexture() on an empty surface.
+        if (currentContextMock?._currentTextureGot) {
+            renderer.flush();
+        }
     }
 
     /** Call once per frame after _drawAll to reset per-frame input state. */
