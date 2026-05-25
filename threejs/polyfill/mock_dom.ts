@@ -37,7 +37,7 @@ export const htmlPage = linkedom.parseHTML('<!DOCTYPE html><html><head></head><b
 globalThis.window = htmlPage.window;
 globalThis.document = htmlPage.window.document;
 globalThis.Image = window.Image;
-window.location = location || { search: '' } as Location;
+window.location = { search: '' } as Location;
 
 type FrameRequestCallback = (time: number) => void;
 let requestAnimationFrameId = 0
