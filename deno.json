@@ -7,7 +7,6 @@
         "three": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.WebGPU.js",
         "three/addons": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/Addons.js",
         "three/addons/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/examples/jsm/",
-        "three/addons/capabilities/WebGPU.js": "./threejs/polyfill/WebGPU.js",
         "three/addons/libs/lil-gui.module.min.js": "./threejs/polyfill/mock-lil-gui.ts",
         "three/src/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/",
         "three/tsl": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r175/src/Three.TSL.js",
