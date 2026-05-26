@@ -9,7 +9,7 @@ You need install [Deno](https://deno.com) first. Require Deno 2.8.
 Then run the following command to run the "backdrop" demo from internet:
 
 ```sh
-deno run --allow-net --allow-env --allow-ffi --allow-sys --unstable-webgpu --import-map https://cdn.jsdelivr.net/gh/chirsz-ever/deno-webgpu-window-demos/deno.json https://cdn.jsdelivr.net/gh/chirsz-ever/deno-webgpu-window-demos/threejs/examples/webgpu_backdrop.js
+deno run --allow-net --allow-env --allow-ffi --allow-read --allow-sys --unstable-webgpu --import-map "https://cdn.jsdelivr.net/gh/chirsz-ever/deno-webgpu-window-demos/deno.json" "https://cdn.jsdelivr.net/gh/chirsz-ever/deno-webgpu-window-demos/threejs/examples/webgpu_backdrop.js"
 ```
 
 Or clone this repository and run:
